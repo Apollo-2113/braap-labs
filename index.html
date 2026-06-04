@@ -177,16 +177,76 @@
   }
 
   /* ── BIG METRICS ROW ── */
+  /* ── METRICS REDESIGN ── */
+  .metrics-hero {
+    background: var(--bg-card);
+    border: 1px solid var(--border-dim);
+    border-radius: 4px;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+    overflow: hidden;
+  }
+  .metrics-hero::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--accent-hot);
+    opacity: 0.7;
+  }
+  .metrics-hero-left {
+    display: flex;
+    flex-direction: column;
+  }
+  .metrics-hero-value {
+    font-family: var(--font-display);
+    font-weight: 900;
+    font-size: 64px;
+    line-height: 1;
+    color: var(--accent-hot);
+    letter-spacing: -0.02em;
+    transition: color 0.2s;
+  }
+  .metrics-hero-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    margin-top: 6px;
+  }
+  .metrics-hero-unit {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+  .metrics-hero-right {
+    text-align: right;
+  }
+  .metrics-hero-sublabel {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+  .metrics-hero-subvalue {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 22px;
+    color: var(--text-secondary);
+    margin-top: 2px;
+  }
+
   .metrics-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 12px;
   }
   @media (min-width: 600px) {
-    .metrics-grid { grid-template-columns: repeat(3, 1fr); }
-  }
-  @media (min-width: 900px) {
-    .metrics-grid { grid-template-columns: repeat(5, 1fr); }
+    .metrics-grid { grid-template-columns: repeat(4, 1fr); }
   }
 
   .metric-card {
@@ -550,7 +610,21 @@
     </div>
   </div>
 
-  <!-- LIVE METRICS -->
+  <!-- SPEED HERO CARD -->
+  <div class="metrics-hero">
+    <div class="metrics-hero-left">
+      <div class="metrics-hero-label">Speed at Takeoff <span style="color:var(--text-dim);font-size:9px" id="speedUnit">(GPS)</span></div>
+      <div class="metrics-hero-value" id="metricSpeed">--</div>
+      <div class="metrics-hero-unit">mph</div>
+    </div>
+    <div class="metrics-hero-right">
+      <div class="metrics-hero-sublabel">Jump Count</div>
+      <div class="metrics-hero-subvalue" id="metricJumps" style="color:var(--accent-lime);font-size:36px;font-weight:900">0</div>
+      <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);margin-top:2px">session total</div>
+    </div>
+  </div>
+
+  <!-- LIVE METRICS 2x2 -->
   <div class="metrics-grid">
     <div class="metric-card" style="--accent-color: var(--accent-ice)">
       <div class="metric-label">Total Accel Magnitude</div>
@@ -562,20 +636,10 @@
       <div class="metric-value" id="metricGyro">0.0</div>
       <div class="metric-unit">°/s (jump peak)</div>
     </div>
-    <div class="metric-card" style="--accent-color: var(--accent-lime)">
-      <div class="metric-label">Airtime Counter</div>
-      <div class="metric-value" id="metricAirtime">0</div>
+    <div class="metric-card" style="--accent-color: var(--accent-lime); grid-column: span 2">
+      <div class="metric-label">Airtime</div>
+      <div class="metric-value large" id="metricAirtime" style="font-size:52px">0.00</div>
       <div class="metric-unit">seconds</div>
-    </div>
-    <div class="metric-card" style="--accent-color: var(--accent-hot)">
-      <div class="metric-label">Speed at Takeoff</div>
-      <div class="metric-value" id="metricSpeed">--</div>
-      <div class="metric-unit">mph <span style="color:var(--text-dim);font-size:9px" id="speedUnit">(GPS)</span></div>
-    </div>
-    <div class="metric-card" style="--accent-color: var(--accent-hot)">
-      <div class="metric-label">Jump Count</div>
-      <div class="metric-value large" id="metricJumps">0</div>
-      <div class="metric-unit">session total</div>
     </div>
   </div>
 
