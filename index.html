@@ -1,0 +1,1588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>MOTO AIR — Jump Tracker</title>
+<style>
+  /* ============================================================
+     DESIGN SYSTEM — Industrial Telemetry Aesthetic
+     Inspired by MX race data logging systems & aerospace HUDs
+  ============================================================ */
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow+Condensed:wght@300;400;600;700;900&family=Barlow:wght@300;400;500&display=swap');
+
+  :root {
+    --bg-void:       #050608;
+    --bg-panel:      #0a0c10;
+    --bg-card:       #0f1218;
+    --bg-elevated:   #151a22;
+    --border-dim:    #1e2530;
+    --border-lit:    #2e3a4a;
+    --accent-hot:    #ff4d1a;
+    --accent-amber:  #ffaa00;
+    --accent-lime:   #aaff00;
+    --accent-ice:    #00d4ff;
+    --accent-muted:  #3a5068;
+    --text-primary:  #e8edf2;
+    --text-secondary:#7a8fa0;
+    --text-dim:      #3a4a5a;
+    --font-mono:     'Share Tech Mono', monospace;
+    --font-display:  'Barlow Condensed', sans-serif;
+    --font-body:     'Barlow', sans-serif;
+    --glow-hot:      0 0 20px rgba(255, 77, 26, 0.4);
+    --glow-ice:      0 0 20px rgba(0, 212, 255, 0.3);
+    --glow-lime:     0 0 20px rgba(170, 255, 0, 0.3);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg-void);
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    min-height: 100vh;
+    overflow-x: hidden;
+    /* Subtle scanline texture */
+    background-image: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,212,255,0.012) 2px,
+      rgba(0,212,255,0.012) 4px
+    );
+  }
+
+  /* ── NOISE OVERLAY ── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none; z-index: 0; opacity: 0.6;
+  }
+
+  /* ── HEADER ── */
+  header {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(5,6,8,0.92);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border-dim);
+    padding: 0 24px;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 56px;
+  }
+
+  .logo {
+    font-family: var(--font-display);
+    font-weight: 900;
+    font-size: 22px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .logo span { color: var(--accent-hot); }
+
+  .header-status {
+    display: flex; align-items: center; gap: 16px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  .sensor-badge {
+    display: flex; align-items: center; gap: 6px;
+    padding: 4px 10px;
+    border: 1px solid var(--border-dim);
+    border-radius: 2px;
+    background: var(--bg-panel);
+  }
+  .sensor-badge.active { border-color: var(--accent-lime); color: var(--accent-lime); }
+  .sensor-badge.inactive { border-color: var(--accent-muted); color: var(--text-dim); }
+  .sensor-badge.error { border-color: var(--accent-hot); color: var(--accent-hot); }
+
+  .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: currentColor;
+  }
+  .dot.pulse { animation: pulse-dot 1s ease-in-out infinite; }
+
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.7); }
+  }
+
+  /* ── MAIN LAYOUT ── */
+  .app-shell {
+    position: relative; z-index: 1;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px 16px;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  @media (min-width: 768px) {
+    .app-shell { padding: 24px; gap: 20px; }
+  }
+
+  /* ── STATE MACHINE VISUALIZER ── */
+  .state-rail {
+    display: flex; align-items: center; gap: 0;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-dim);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .state-node {
+    flex: 1;
+    padding: 12px 8px;
+    text-align: center;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    border-right: 1px solid var(--border-dim);
+    position: relative;
+    transition: all 0.2s ease;
+  }
+  .state-node:last-child { border-right: none; }
+
+  .state-node.GROUND_RIDING.active {
+    background: rgba(170,255,0,0.08);
+    color: var(--accent-lime);
+    box-shadow: inset 0 -2px 0 var(--accent-lime);
+  }
+  .state-node.AIRBORNE_FREEFALL.active {
+    background: rgba(0,212,255,0.08);
+    color: var(--accent-ice);
+    box-shadow: inset 0 -2px 0 var(--accent-ice);
+    animation: airborne-flash 0.5s ease-in-out infinite alternate;
+  }
+  .state-node.LANDING_IMPACT.active {
+    background: rgba(255,77,26,0.12);
+    color: var(--accent-hot);
+    box-shadow: inset 0 -2px 0 var(--accent-hot);
+    animation: impact-shake 0.1s ease-in-out 4;
+  }
+
+  @keyframes airborne-flash { from { opacity: 0.7; } to { opacity: 1; } }
+  @keyframes impact-shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-2px); }
+    75% { transform: translateX(2px); }
+  }
+
+  /* ── BIG METRICS ROW ── */
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+  @media (min-width: 600px) {
+    .metrics-grid { grid-template-columns: repeat(4, 1fr); }
+  }
+
+  .metric-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-dim);
+    border-radius: 4px;
+    padding: 16px;
+    position: relative;
+    overflow: hidden;
+  }
+  .metric-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--accent-color, var(--border-dim));
+    opacity: 0.6;
+  }
+
+  .metric-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin-bottom: 8px;
+  }
+
+  .metric-value {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 36px;
+    line-height: 1;
+    color: var(--accent-color, var(--text-primary));
+    transition: color 0.2s;
+  }
+  .metric-value.large { font-size: 48px; }
+
+  .metric-unit {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-secondary);
+    margin-top: 4px;
+  }
+
+  /* ── WAVEFORM DISPLAY ── */
+  .panel {
+    background: var(--bg-card);
+    border: 1px solid var(--border-dim);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .panel-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border-dim);
+    background: var(--bg-panel);
+  }
+
+  .panel-title {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+  }
+
+  .panel-tag {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 0.1em;
+  }
+
+  canvas#waveform {
+    display: block;
+    width: 100%;
+    height: 120px;
+    background: var(--bg-void);
+  }
+
+  /* ── CONTROL STRIP ── */
+  .controls {
+    display: flex; align-items: stretch; gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    padding: 12px 24px;
+    transition: all 0.15s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-primary {
+    background: var(--accent-lime);
+    color: #000;
+  }
+  .btn-primary:hover { filter: brightness(1.1); box-shadow: var(--glow-lime); }
+  .btn-primary:active { transform: scale(0.97); }
+  .btn-primary:disabled { background: var(--border-dim); color: var(--text-dim); cursor: not-allowed; box-shadow: none; }
+
+  .btn-danger {
+    background: transparent;
+    color: var(--accent-hot);
+    border: 1px solid var(--accent-hot);
+  }
+  .btn-danger:hover { background: rgba(255,77,26,0.1); box-shadow: var(--glow-hot); }
+  .btn-danger:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--text-secondary);
+    border: 1px solid var(--border-dim);
+  }
+  .btn-ghost:hover { border-color: var(--border-lit); color: var(--text-primary); }
+
+  /* ── SLIDERS CONFIG ── */
+  .config-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    padding: 16px;
+  }
+  @media (min-width: 768px) {
+    .config-grid { grid-template-columns: repeat(4, 1fr); }
+  }
+
+  .config-item label {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 8px;
+  }
+
+  .config-item .val {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--accent-amber);
+    float: right;
+  }
+
+  input[type=range] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 4px;
+    background: var(--border-dim);
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--accent-amber);
+    box-shadow: 0 0 8px rgba(255,170,0,0.5);
+    transition: transform 0.1s;
+  }
+  input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.3); }
+
+  /* ── JUMP LOG TABLE ── */
+  .jump-log {
+    max-height: 320px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-lit) transparent;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--font-mono);
+    font-size: 12px;
+  }
+
+  thead th {
+    padding: 10px 12px;
+    text-align: left;
+    font-size: 10px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    border-bottom: 1px solid var(--border-dim);
+    position: sticky; top: 0;
+    background: var(--bg-panel);
+    white-space: nowrap;
+  }
+
+  tbody tr {
+    border-bottom: 1px solid rgba(30,37,48,0.5);
+    transition: background 0.1s;
+  }
+  tbody tr:hover { background: var(--bg-elevated); }
+  tbody tr.new-entry { animation: row-enter 0.4s ease-out; }
+
+  @keyframes row-enter {
+    from { background: rgba(170,255,0,0.08); transform: translateX(-8px); opacity: 0; }
+    to { background: transparent; transform: translateX(0); opacity: 1; }
+  }
+
+  tbody td {
+    padding: 10px 12px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+  }
+
+  td.jump-num { color: var(--text-dim); }
+  td.airtime { color: var(--accent-ice); font-weight: bold; font-size: 14px; }
+  td.impact { color: var(--accent-hot); }
+  td.impact.heavy { color: var(--accent-hot); text-shadow: var(--glow-hot); }
+  td.peak-gyro { color: var(--accent-amber); }
+  td.timestamp { color: var(--text-dim); font-size: 11px; }
+
+  .empty-state {
+    padding: 40px;
+    text-align: center;
+    color: var(--text-dim);
+    font-family: var(--font-display);
+    font-size: 14px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  /* ── IMPACT FLASH OVERLAY ── */
+  .impact-overlay {
+    position: fixed; inset: 0;
+    background: rgba(255,77,26,0.06);
+    pointer-events: none;
+    z-index: 999;
+    opacity: 0;
+    transition: opacity 0.05s;
+  }
+  .impact-overlay.flash { opacity: 1; }
+
+  /* ── AIRBORNE INDICATOR ── */
+  .airborne-banner {
+    position: fixed;
+    top: 64px; left: 50%;
+    transform: translateX(-50%) translateY(-80px);
+    background: var(--accent-ice);
+    color: #000;
+    font-family: var(--font-display);
+    font-weight: 900;
+    font-size: 13px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    padding: 8px 20px;
+    border-radius: 2px;
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    z-index: 200;
+    white-space: nowrap;
+  }
+  .airborne-banner.visible {
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* ── DEMO NOTE ── */
+  .demo-callout {
+    background: rgba(255,170,0,0.05);
+    border: 1px solid rgba(255,170,0,0.2);
+    border-radius: 4px;
+    padding: 12px 16px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--accent-amber);
+    line-height: 1.6;
+  }
+  .demo-callout strong { font-weight: bold; color: #fff; }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border-lit); border-radius: 3px; }
+
+  /* ── MISC ── */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 600px) { .grid-2 { grid-template-columns: 1fr; } }
+
+  .tag {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 2px 6px;
+    border-radius: 2px;
+    background: var(--bg-elevated);
+    color: var(--text-dim);
+    border: 1px solid var(--border-dim);
+  }
+</style>
+</head>
+<body>
+
+<div class="impact-overlay" id="impactOverlay"></div>
+<div class="airborne-banner" id="airborneBanner">⬆ AIRBORNE</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     HEADER
+═══════════════════════════════════════════════════════════ -->
+<header>
+  <div class="logo">MOTO <span>AIR</span></div>
+  <div class="header-status">
+    <div class="sensor-badge inactive" id="accelBadge">
+      <div class="dot" id="accelDot"></div>
+      <span>ACCEL</span>
+    </div>
+    <div class="sensor-badge inactive" id="gyroBadge">
+      <div class="dot" id="gyroDot"></div>
+      <span>GYRO</span>
+    </div>
+    <div class="sensor-badge inactive" id="sessionBadge">
+      <div class="dot" id="sessionDot"></div>
+      <span id="sessionLabel">IDLE</span>
+    </div>
+  </div>
+</header>
+
+<!-- ═══════════════════════════════════════════════════════════
+     APP SHELL
+═══════════════════════════════════════════════════════════ -->
+<div class="app-shell">
+
+  <!-- DEMO CALLOUT -->
+  <div class="demo-callout" id="permissionNote">
+    <strong>📡 SENSOR ACCESS REQUIRED</strong> — This POC uses the real
+    <code>DeviceMotionEvent</code> API (accelerometer + gyroscope).
+    On iOS 13+, tap <strong>ENABLE SENSORS</strong> to grant permission.
+    Android/Chrome grants automatically on HTTPS. For desktop demo, use
+    <strong>SIMULATE RIDE</strong> to inject synthetic jump data.
+  </div>
+
+  <!-- STATE MACHINE RAIL -->
+  <div class="state-rail">
+    <div class="state-node GROUND_RIDING active" id="stateGround">
+      <div>Ground Riding</div>
+    </div>
+    <div class="state-node AIRBORNE_FREEFALL" id="stateAirborne">
+      <div>Airborne / Freefall</div>
+    </div>
+    <div class="state-node LANDING_IMPACT" id="stateLanding">
+      <div>Landing Impact</div>
+    </div>
+  </div>
+
+  <!-- LIVE METRICS -->
+  <div class="metrics-grid">
+    <div class="metric-card" style="--accent-color: var(--accent-ice)">
+      <div class="metric-label">Total Accel Magnitude</div>
+      <div class="metric-value" id="metricMag">0.00</div>
+      <div class="metric-unit">G-force (filtered)</div>
+    </div>
+    <div class="metric-card" style="--accent-color: var(--accent-amber)">
+      <div class="metric-label">Peak Angular Vel.</div>
+      <div class="metric-value" id="metricGyro">0.0</div>
+      <div class="metric-unit">°/s (jump peak)</div>
+    </div>
+    <div class="metric-card" style="--accent-color: var(--accent-lime)">
+      <div class="metric-label">Airtime Counter</div>
+      <div class="metric-value" id="metricAirtime">0</div>
+      <div class="metric-unit">milliseconds</div>
+    </div>
+    <div class="metric-card" style="--accent-color: var(--accent-hot)">
+      <div class="metric-label">Jump Count</div>
+      <div class="metric-value large" id="metricJumps">0</div>
+      <div class="metric-unit">session total</div>
+    </div>
+  </div>
+
+  <!-- WAVEFORM -->
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-title">Live Signal — Filtered Acceleration Magnitude</div>
+      <div style="display:flex;gap:12px;align-items:center">
+        <span class="tag" id="filterTag">LPF α=0.15</span>
+        <span class="panel-tag" id="sampleRate">0 Hz</span>
+      </div>
+    </div>
+    <canvas id="waveform"></canvas>
+    <!-- Threshold lines drawn in canvas -->
+  </div>
+
+  <!-- CONTROLS -->
+  <div class="controls">
+    <button class="btn btn-primary" id="btnEnable">Enable Sensors</button>
+    <button class="btn btn-primary" id="btnSimulate">▶ Simulate Ride</button>
+    <button class="btn btn-danger" id="btnStop" disabled>■ Stop</button>
+    <button class="btn btn-ghost" id="btnClear">Clear Log</button>
+  </div>
+
+  <!-- CONFIGURATION -->
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-title">Signal Processing Config</div>
+      <span class="tag">ADJUSTABLE — matches production mobile params</span>
+    </div>
+    <div class="config-grid">
+      <div class="config-item">
+        <label>LPF Alpha (smoothing) <span class="val" id="valAlpha">0.15</span></label>
+        <input type="range" id="cfgAlpha" min="0.02" max="0.5" step="0.01" value="0.15">
+      </div>
+      <div class="config-item">
+        <label>Freefall Threshold <span class="val" id="valFreefall">0.25 G</span></label>
+        <input type="range" id="cfgFreefall" min="0.05" max="0.6" step="0.01" value="0.25">
+      </div>
+      <div class="config-item">
+        <label>Landing Threshold <span class="val" id="valLanding">2.0 G</span></label>
+        <input type="range" id="cfgLanding" min="1.0" max="5.0" step="0.1" value="2.0">
+      </div>
+      <div class="config-item">
+        <label>Min Airtime Debounce <span class="val" id="valDebounce">250 ms</span></label>
+        <input type="range" id="cfgDebounce" min="50" max="1000" step="10" value="250">
+      </div>
+    </div>
+  </div>
+
+  <!-- JUMP LOG -->
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-title">Jump Log</div>
+      <span class="panel-tag" id="logCount">0 jumps</span>
+    </div>
+    <div class="jump-log" id="jumpLog">
+      <div class="empty-state" id="emptyState">No jumps recorded — start a session</div>
+      <table id="jumpTable" style="display:none">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Timestamp</th>
+            <th>Airtime</th>
+            <th>Impact (G)</th>
+            <th>Peak ω (°/s)</th>
+            <th>Quality</th>
+          </tr>
+        </thead>
+        <tbody id="jumpTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ARCHITECTURE NOTE -->
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-title">Architecture / Signal Pipeline</div>
+    </div>
+    <div style="padding:16px; font-family: var(--font-mono); font-size:11px; color: var(--text-secondary); line-height:2">
+      <span style="color:var(--accent-ice)">RAW SENSOR</span>
+      &nbsp;→&nbsp;
+      <span style="color:var(--accent-amber)">EUCLIDEAN MAGNITUDE √(ax²+ay²+az²)</span>
+      &nbsp;→&nbsp;
+      <span style="color:var(--accent-amber)">LPF (EMA α)</span>
+      &nbsp;→&nbsp;
+      <span style="color:var(--accent-lime)">STATE MACHINE</span>
+      &nbsp;→&nbsp;
+      <span style="color:var(--accent-hot)">JUMP EVENT</span>
+      <br>
+      <span style="color:var(--text-dim)">
+        Gyroscope stream is processed in parallel → magnitude √(gx²+gy²+gz²) → peak tracked per-jump.<br>
+        Orientation-agnostic: works regardless of phone placement in pocket (portrait/landscape/inverted).<br>
+        On mobile: DeviceMotionEvent @ ~60Hz. Production iOS: CMMotionManager @ 100Hz. Android: TYPE_LINEAR_ACCELERATION + TYPE_GYROSCOPE.
+      </span>
+    </div>
+  </div>
+
+</div><!-- /app-shell -->
+
+<!-- ═══════════════════════════════════════════════════════════
+     JAVASCRIPT — Full signal processing engine
+═══════════════════════════════════════════════════════════ -->
+<script>
+'use strict';
+
+/* ══════════════════════════════════════════════════════════════════
+   MODULE 1: SignalProcessor
+   Handles all math — pure functions, no side effects.
+   Maps directly to the math layer you'd implement in Dart/Swift.
+══════════════════════════════════════════════════════════════════ */
+const SignalProcessor = (() => {
+
+  /**
+   * Calculate Euclidean norm (3D vector magnitude).
+   * ORIENTATION-AGNOSTIC: result is the same regardless of device rotation.
+   * iOS/Swift equiv: sqrt(pow(accel.x,2) + pow(accel.y,2) + pow(accel.z,2))
+   * Dart equiv: math.sqrt(x*x + y*y + z*z)
+   *
+   * @param {number} x  Acceleration on x-axis (G or m/s²)
+   * @param {number} y  Acceleration on y-axis
+   * @param {number} z  Acceleration on z-axis
+   * @returns {number}  Total magnitude
+   */
+  function euclideanMagnitude(x, y, z) {
+    return Math.sqrt(x * x + y * y + z * z);
+  }
+
+  /**
+   * Exponential Moving Average — single-pole IIR low-pass filter.
+   *
+   * This approximates a Butterworth LPF for our purpose.
+   * Alpha controls cutoff: low alpha = aggressive smoothing (kills vibration).
+   * Engine vibration (250F: ~40-80Hz, 450F: ~30-60Hz) is eliminated while
+   * macro jump movements (0.5–3Hz) are preserved.
+   *
+   * In production Swift: use Accelerate framework vDSP_vma() for vectorized ops.
+   * In Dart: maintain a running `_filtered` state variable in isolate.
+   *
+   * @param {number} newSample   Latest raw sample
+   * @param {number} lastFiltered  Previous filtered output
+   * @param {number} alpha       Smoothing factor [0.01 .. 0.5]
+   * @returns {number} Filtered value
+   */
+  function lowPassFilter(newSample, lastFiltered, alpha) {
+    // y[n] = α·x[n] + (1−α)·y[n−1]
+    return alpha * newSample + (1 - alpha) * lastFiltered;
+  }
+
+  /**
+   * Convert raw accelerometer values (m/s²) to G-force.
+   * Web DeviceMotion API returns m/s², hardware sensors often do too.
+   * CoreMotion returns G already. Adjust per platform.
+   */
+  const MS2_TO_G = 1 / 9.81;
+  function toG(ms2) { return ms2 * MS2_TO_G; }
+
+  return { euclideanMagnitude, lowPassFilter, toG };
+})();
+
+
+/* ══════════════════════════════════════════════════════════════════
+   MODULE 2: JumpStateMachine
+   Rigid FSM with debounce, peak tracking, and immutable event emission.
+   Lifecycle: GROUND_RIDING → AIRBORNE_FREEFALL → LANDING_IMPACT → GROUND_RIDING
+══════════════════════════════════════════════════════════════════ */
+class JumpStateMachine {
+
+  // ── State enum (mirrors Dart enum / Swift enum)
+  static State = Object.freeze({
+    GROUND_RIDING:    'GROUND_RIDING',
+    AIRBORNE_FREEFALL:'AIRBORNE_FREEFALL',
+    LANDING_IMPACT:   'LANDING_IMPACT',
+  });
+
+  constructor(config, onJumpDetected, onStateChange) {
+    /**
+     * config: {
+     *   freefallThresholdG: number,   // below = airborne (default 0.25G)
+     *   landingThresholdG:  number,   // above = landing  (default 2.0G)
+     *   minAirtimeMs:       number,   // debounce          (default 250ms)
+     * }
+     */
+    this.config           = config;
+    this.onJumpDetected   = onJumpDetected; // callback(JumpEvent)
+    this.onStateChange    = onStateChange;  // callback(newState)
+
+    this._state           = JumpStateMachine.State.GROUND_RIDING;
+    this._takeoffTime     = null;   // performance.now() at takeoff
+    this._peakAngularVel  = 0;      // deg/s, tracked during flight
+    this._jumpCount       = 0;
+
+    // Gyroscope stability tracker (smooth angular velocity)
+    this._filteredGyroMag = 0;
+    this._gyroAlpha       = 0.2;    // separate LPF for gyro
+
+    // Consecutive sample counter for takeoff confirmation
+    // (requires N continuous below-threshold readings before confirming airborne)
+    this._freefallSamples = 0;
+    this._FREEFALL_CONFIRM_SAMPLES = 3; // ~50ms at 60Hz
+  }
+
+  /**
+   * Primary update — called on every sensor event (~60Hz web, 100Hz mobile).
+   * Minimize allocations here: no object creation in hot path.
+   *
+   * @param {number} filteredMagG   Filtered acceleration magnitude in G
+   * @param {number} rawGyroMagDps  Raw gyroscope magnitude in degrees/sec
+   * @param {number} timestamp      performance.now() or equivalent
+   */
+  update(filteredMagG, rawGyroMagDps, timestamp) {
+
+    // ── Smooth gyro magnitude (orientation-agnostic rotational speed)
+    this._filteredGyroMag = SignalProcessor.lowPassFilter(
+      rawGyroMagDps, this._filteredGyroMag, this._gyroAlpha
+    );
+
+    switch (this._state) {
+
+      // ─────────────────────────────────────────────────────────
+      case JumpStateMachine.State.GROUND_RIDING:
+      // ─────────────────────────────────────────────────────────
+        /**
+         * TAKEOFF CONDITION:
+         * 1. Filtered mag < freefallThreshold (phone approaching weightlessness)
+         * 2. Angular velocity is settling (no severe ground chatter)
+         *    Gyro < 200°/s confirms we're not in a washboard/whoops section
+         * 3. Must sustain N samples (debounce against single-spike false positives)
+         */
+        if (filteredMagG < this.config.freefallThresholdG &&
+            this._filteredGyroMag < 200) {
+          this._freefallSamples++;
+          if (this._freefallSamples >= this._FREEFALL_CONFIRM_SAMPLES) {
+            this._transitionTo(JumpStateMachine.State.AIRBORNE_FREEFALL, timestamp);
+            this._takeoffTime = timestamp;
+            this._peakAngularVel = 0;
+            this._freefallSamples = 0;
+          }
+        } else {
+          this._freefallSamples = 0; // reset on any non-freefall sample
+        }
+        break;
+
+      // ─────────────────────────────────────────────────────────
+      case JumpStateMachine.State.AIRBORNE_FREEFALL:
+      // ─────────────────────────────────────────────────────────
+        /**
+         * Track peak angular velocity while airborne.
+         * This captures whips, scrubs, seat bounces — anything rotational.
+         * Raw (unfiltered) gyro used here for accurate peak detection.
+         */
+        if (rawGyroMagDps > this._peakAngularVel) {
+          this._peakAngularVel = rawGyroMagDps;
+        }
+
+        /**
+         * LANDING CONDITION:
+         * Spike above landing threshold = ground contact.
+         * No debounce needed here — the spike IS the event.
+         */
+        if (filteredMagG > this.config.landingThresholdG) {
+          this._transitionTo(JumpStateMachine.State.LANDING_IMPACT, timestamp);
+          this._handleLanding(filteredMagG, timestamp);
+        }
+        break;
+
+      // ─────────────────────────────────────────────────────────
+      case JumpStateMachine.State.LANDING_IMPACT:
+      // ─────────────────────────────────────────────────────────
+        /**
+         * Brief hold state — auto-transitions back to GROUND_RIDING
+         * once magnitude normalizes (< 1.5G). This prevents the landing
+         * impact from immediately retriggering takeoff detection.
+         */
+        if (filteredMagG < 1.5) {
+          this._transitionTo(JumpStateMachine.State.GROUND_RIDING, timestamp);
+        }
+        break;
+    }
+
+    return this._state;
+  }
+
+  /**
+   * Process a validated landing — emit JumpEvent if airtime passes debounce.
+   * Private method. No external callers.
+   */
+  _handleLanding(impactG, timestamp) {
+    const airtimeMs = timestamp - this._takeoffTime;
+
+    // ── DEBOUNCE FILTER: discard short false positives (whoops, step-ups)
+    if (airtimeMs < this.config.minAirtimeMs) {
+      console.debug(`[FSM] Jump discarded: airtime ${airtimeMs.toFixed(0)}ms < ${this.config.minAirtimeMs}ms threshold`);
+      return;
+    }
+
+    this._jumpCount++;
+
+    /**
+     * JUMP EVENT — Immutable data object.
+     * In Dart: @immutable class JumpEvent { final DateTime timestamp; ... }
+     * In Swift: struct JumpEvent { let timestamp: Date; ... }
+     */
+    const event = Object.freeze({
+      id:               this._jumpCount,
+      timestamp:        new Date(),
+      timestampMs:      Date.now(),
+      airtimeMs:        Math.round(airtimeMs),
+      impactG:          parseFloat(impactG.toFixed(2)),
+      peakAngularVelDps: Math.round(this._peakAngularVel),
+    });
+
+    this.onJumpDetected(event);
+  }
+
+  _transitionTo(newState, timestamp) {
+    const prev = this._state;
+    this._state = newState;
+    if (prev !== newState) this.onStateChange(newState, prev);
+  }
+
+  get state() { return this._state; }
+  get jumpCount() { return this._jumpCount; }
+}
+
+
+/* ══════════════════════════════════════════════════════════════════
+   MODULE 3: SensorSession
+   Lifecycle manager — sensor access, backgrounding notes, cleanup.
+   Maps to: iOS CMMotionManager, Android SensorManager + ForegroundService
+══════════════════════════════════════════════════════════════════ */
+class SensorSession {
+
+  constructor(onSensorData) {
+    this._onSensorData = onSensorData;
+    this._active       = false;
+    this._lastMotion   = null;
+    this._sampleCount  = 0;
+    this._lastHzTime   = performance.now();
+    this._currentHz    = 0;
+    this._visibilityHandler = this._onVisibilityChange.bind(this);
+
+    /**
+     * BACKGROUND EXECUTION NOTE (for mobile port):
+     *
+     * iOS Swift:
+     *   - Add UIBackgroundModes: "processing" to Info.plist
+     *   - Use CMMotionManager.startAccelerometerUpdates(to: OperationQueue())
+     *   - BGProcessingTask to extend runtime; or CMMotionActivityManager
+     *   - Keep a UIBackgroundTaskIdentifier alive via beginBackgroundTask()
+     *
+     * Android (Flutter/Kotlin):
+     *   - Create a ForegroundService with FOREGROUND_SERVICE_TYPE_LOCATION or DATA_SYNC
+     *   - Post a persistent notification (required by Android 8+)
+     *   - Register SensorEventListener in the Service, not the Activity
+     *   - Use SensorManager.registerListener() with SENSOR_DELAY_GAME (20ms)
+     *   - Flutter: use flutter_foreground_task package
+     *
+     * BATTERY OPTIMIZATION:
+     *   - Avoid object allocation in sensor callbacks (pre-allocate buffers)
+     *   - Process on a dedicated HandlerThread (Android) / serial DispatchQueue (iOS)
+     *   - Only post UI updates at ~30Hz even if sensor runs at 100Hz
+     */
+  }
+
+  async start() {
+    if (this._active) return;
+
+    // ── Request iOS 13+ permission
+    if (typeof DeviceMotionEvent !== 'undefined' &&
+        typeof DeviceMotionEvent.requestPermission === 'function') {
+      try {
+        const perm = await DeviceMotionEvent.requestPermission();
+        if (perm !== 'granted') throw new Error('Permission denied');
+      } catch(e) {
+        throw new Error('iOS sensor permission denied: ' + e.message);
+      }
+    }
+
+    if (typeof DeviceMotionEvent === 'undefined') {
+      throw new Error('DeviceMotionEvent not supported on this platform');
+    }
+
+    this._active = true;
+
+    // ── Main sensor handler
+    // Receives: acceleration (m/s²), rotationRate (°/s), interval (s)
+    this._motionHandler = (evt) => {
+      if (!this._active) return;
+
+      const acc = evt.accelerationIncludingGravity || evt.acceleration;
+      const rot = evt.rotationRate;
+
+      if (!acc || acc.x === null) return;
+
+      // Calculate Hz
+      this._sampleCount++;
+      const now = performance.now();
+      if (now - this._lastHzTime > 1000) {
+        this._currentHz = this._sampleCount;
+        this._sampleCount = 0;
+        this._lastHzTime = now;
+      }
+
+      this._onSensorData({
+        ax: acc.x ?? 0,
+        ay: acc.y ?? 0,
+        az: acc.z ?? 0,
+        gx: rot?.alpha ?? 0,
+        gy: rot?.beta  ?? 0,
+        gz: rot?.gamma ?? 0,
+        timestamp: performance.now(),
+        hz: this._currentHz,
+      });
+    };
+
+    window.addEventListener('devicemotion', this._motionHandler, { passive: true });
+    document.addEventListener('visibilitychange', this._visibilityHandler);
+  }
+
+  stop() {
+    if (!this._active) return;
+    this._active = false;
+    if (this._motionHandler) {
+      window.removeEventListener('devicemotion', this._motionHandler);
+    }
+    document.removeEventListener('visibilitychange', this._visibilityHandler);
+  }
+
+  /**
+   * Web Page Visibility API — closest analog to iOS background mode on web.
+   * In production mobile, the OS background task handles this properly.
+   */
+  _onVisibilityChange() {
+    // On web we can't prevent suspension; on mobile the foreground service handles it.
+    console.info('[Session] Visibility:', document.visibilityState);
+  }
+
+  get active() { return this._active; }
+  get hz() { return this._currentHz; }
+}
+
+
+/* ══════════════════════════════════════════════════════════════════
+   MODULE 4: WaveformRenderer
+   Efficient canvas-based oscilloscope. Double-buffered ring buffer.
+══════════════════════════════════════════════════════════════════ */
+class WaveformRenderer {
+
+  constructor(canvasEl) {
+    this._canvas  = canvasEl;
+    this._ctx     = canvasEl.getContext('2d');
+    this._buffer  = new Float32Array(500); // ring buffer — NO re-allocation
+    this._head    = 0;
+    this._maxSeen = 5;    // dynamic Y scale
+
+    this._rafId   = null;
+    this._dirty   = false;
+    this._freefallThreshold = 0.25;
+    this._landingThreshold  = 2.0;
+
+    // Resize observer for responsive canvas
+    const ro = new ResizeObserver(() => this._resize());
+    ro.observe(canvasEl.parentElement);
+    this._resize();
+
+    this._startRenderLoop();
+  }
+
+  push(value) {
+    this._buffer[this._head % this._buffer.length] = value;
+    this._head++;
+    if (value > this._maxSeen) this._maxSeen = value;
+    this._dirty = true;
+  }
+
+  setThresholds(ff, land) {
+    this._freefallThreshold = ff;
+    this._landingThreshold  = land;
+    this._dirty = true;
+  }
+
+  _resize() {
+    const el = this._canvas;
+    const w = el.parentElement.clientWidth;
+    el.width  = w * window.devicePixelRatio;
+    el.height = 120 * window.devicePixelRatio;
+    el.style.width  = w + 'px';
+    el.style.height = '120px';
+    this._dirty = true;
+  }
+
+  _startRenderLoop() {
+    const loop = () => {
+      if (this._dirty) {
+        this._draw();
+        this._dirty = false;
+      }
+      this._rafId = requestAnimationFrame(loop);
+    };
+    this._rafId = requestAnimationFrame(loop);
+  }
+
+  _draw() {
+    const ctx = this._ctx;
+    const W = this._canvas.width, H = this._canvas.height;
+    const dpr = window.devicePixelRatio;
+    const PAD_TOP = 8 * dpr, PAD_BOT = 8 * dpr;
+    const drawH = H - PAD_TOP - PAD_BOT;
+
+    ctx.clearRect(0, 0, W, H);
+
+    // Background
+    ctx.fillStyle = '#050608';
+    ctx.fillRect(0, 0, W, H);
+
+    // Grid lines (subtle)
+    ctx.strokeStyle = '#1a2030';
+    ctx.lineWidth = 1;
+    for (let i = 1; i < 4; i++) {
+      const y = PAD_TOP + (drawH / 4) * i;
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+    }
+
+    // Max Y for scaling — adaptive
+    const yMax = Math.max(this._maxSeen * 1.1, this._landingThreshold * 1.2);
+    const yScale = drawH / yMax;
+
+    // ── THRESHOLD LINES
+    const ffY  = PAD_TOP + drawH - this._freefallThreshold * yScale;
+    const lndY = PAD_TOP + drawH - this._landingThreshold  * yScale;
+
+    // Freefall threshold (ice/cyan dashed)
+    ctx.strokeStyle = 'rgba(0,212,255,0.4)';
+    ctx.lineWidth = 1 * dpr;
+    ctx.setLineDash([4 * dpr, 6 * dpr]);
+    ctx.beginPath(); ctx.moveTo(0, ffY); ctx.lineTo(W, ffY); ctx.stroke();
+
+    // Landing threshold (orange dashed)
+    ctx.strokeStyle = 'rgba(255,77,26,0.5)';
+    ctx.setLineDash([4 * dpr, 4 * dpr]);
+    ctx.beginPath(); ctx.moveTo(0, lndY); ctx.lineTo(W, lndY); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // ── WAVEFORM
+    const N   = this._buffer.length;
+    const len = Math.min(this._head, N);
+    if (len < 2) return;
+
+    ctx.lineWidth = 1.5 * dpr;
+    ctx.lineJoin  = 'round';
+
+    // Glow pass
+    ctx.shadowColor = 'rgba(0,212,255,0.6)';
+    ctx.shadowBlur  = 6 * dpr;
+    ctx.strokeStyle = 'rgba(0,212,255,0.25)';
+    ctx.beginPath();
+
+    for (let i = 0; i < len; i++) {
+      const bufIdx = (this._head - len + i) % N;
+      const v = this._buffer[(bufIdx + N) % N];
+      const x = (i / (N - 1)) * W;
+      const y = PAD_TOP + drawH - v * yScale;
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+
+    // Main line
+    ctx.shadowBlur  = 0;
+    ctx.strokeStyle = '#00d4ff';
+    ctx.lineWidth   = 1 * dpr;
+    ctx.beginPath();
+    for (let i = 0; i < len; i++) {
+      const bufIdx = (this._head - len + i) % N;
+      const v = this._buffer[(bufIdx + N) % N];
+      const x = (i / (N - 1)) * W;
+      const y = PAD_TOP + drawH - Math.min(v * yScale, drawH);
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+
+    // Labels
+    ctx.fillStyle  = 'rgba(0,212,255,0.5)';
+    ctx.font       = `${9 * dpr}px 'Share Tech Mono', monospace`;
+    ctx.fillText(`${this._freefallThreshold.toFixed(2)}G`, 4 * dpr, ffY - 3 * dpr);
+
+    ctx.fillStyle  = 'rgba(255,77,26,0.6)';
+    ctx.fillText(`${this._landingThreshold.toFixed(1)}G`, 4 * dpr, lndY - 3 * dpr);
+  }
+
+  destroy() {
+    if (this._rafId) cancelAnimationFrame(this._rafId);
+  }
+}
+
+
+/* ══════════════════════════════════════════════════════════════════
+   MODULE 5: JumpSimulator
+   Generates realistic synthetic sensor data for desktop testing.
+   Mimics: Takeoff → freefall → midair rotation → landing impact
+══════════════════════════════════════════════════════════════════ */
+class JumpSimulator {
+
+  constructor(onFrame) {
+    this._onFrame = onFrame;
+    this._id      = null;
+    this._t       = 0;
+    this._phase   = 'riding';
+    this._phaseT  = 0;
+    this._PHASES  = ['riding', 'takeoff', 'air', 'impact', 'settle'];
+    this._phaseIdx = 0;
+    this._ridingDuration    = () => 2000 + Math.random() * 3000;
+    this._airtimeDuration   = () => 400 + Math.random() * 800;
+    this._nextPhaseTime     = this._ridingDuration();
+  }
+
+  start() {
+    if (this._id) return;
+    let lastTime = performance.now();
+
+    const tick = () => {
+      const now = performance.now();
+      const dt  = now - lastTime;
+      lastTime  = now;
+      this._t  += dt;
+      this._phaseT += dt;
+
+      const data = this._generateFrame(now);
+      this._onFrame(data);
+      this._id = requestAnimationFrame(tick);
+    };
+    this._id = requestAnimationFrame(tick);
+  }
+
+  stop() {
+    if (this._id) { cancelAnimationFrame(this._id); this._id = null; }
+    this._phase = 'riding'; this._phaseT = 0; this._nextPhaseTime = this._ridingDuration();
+  }
+
+  _generateFrame(now) {
+    // Engine vibration noise (simulates 450F ~50Hz primary)
+    const engineNoise = () => (Math.random() - 0.5) * 2.5;
+    // Track chatter (20-30Hz)
+    const trackNoise  = () => (Math.random() - 0.5) * 0.8;
+
+    let ax, ay, az, gx, gy, gz;
+
+    switch(this._phase) {
+
+      case 'riding':
+        // Normal riding: ~1G total (gravity), engine + track vibration on top
+        ax = 1.0 + engineNoise() * 0.4 + trackNoise();
+        ay = engineNoise() * 0.3;
+        az = engineNoise() * 0.3;
+        gx = (Math.random()-0.5)*60; gy = (Math.random()-0.5)*40; gz = (Math.random()-0.5)*40;
+        if (this._phaseT > this._nextPhaseTime) this._nextPhase('takeoff');
+        break;
+
+      case 'takeoff':
+        // Brief compression then launch: mag spikes then drops fast
+        const tRatio = this._phaseT / 200;
+        ax = Math.max(0.05, 1.0 - tRatio * 4.5) + engineNoise() * 0.1;
+        ay = engineNoise() * 0.05;
+        az = engineNoise() * 0.05;
+        gx = (Math.random()-0.5)*80; gy=(Math.random()-0.5)*60; gz=(Math.random()-0.5)*60;
+        if (this._phaseT > 200) this._nextPhase('air');
+        break;
+
+      case 'air':
+        // Freefall + whip: very low G, high angular velocity
+        const airProgress = this._phaseT / this._airtimeDuration();
+        // Whip peaks mid-air
+        const whipFactor = Math.sin(airProgress * Math.PI) * 3;
+        ax = 0.05 + (Math.random()-0.5)*0.06;
+        ay = (Math.random()-0.5)*0.04;
+        az = (Math.random()-0.5)*0.04;
+        gx = whipFactor * 120 + (Math.random()-0.5)*20;
+        gy = whipFactor * 80  + (Math.random()-0.5)*15;
+        gz = whipFactor * 60  + (Math.random()-0.5)*15;
+        if (this._phaseT > this._nextPhaseTime) this._nextPhase('impact');
+        break;
+
+      case 'impact':
+        // Massive G spike on landing
+        const impRatio = Math.max(0, 1 - this._phaseT / 80);
+        const impactMag = 3.5 + Math.random() * 2.5;
+        ax = impactMag * impRatio;
+        ay = (Math.random()-0.5)*impactMag * 0.3 * impRatio;
+        az = (Math.random()-0.5)*impactMag * 0.3 * impRatio;
+        gx = (Math.random()-0.5)*200*impRatio; gy=(Math.random()-0.5)*150*impRatio; gz=(Math.random()-0.5)*100*impRatio;
+        if (this._phaseT > 150) this._nextPhase('settle');
+        break;
+
+      case 'settle':
+        // Riding out the landing
+        ax = 0.9 + engineNoise() * 0.3;
+        ay = engineNoise() * 0.2; az = engineNoise() * 0.2;
+        gx=(Math.random()-0.5)*50; gy=(Math.random()-0.5)*40; gz=(Math.random()-0.5)*40;
+        if (this._phaseT > 500) this._nextPhase('riding');
+        break;
+    }
+
+    // Convert to m/s² for consistency with DeviceMotionEvent
+    const G = 9.81;
+    return { ax: ax*G, ay: ay*G, az: az*G, gx, gy, gz, timestamp: now, hz: 60 };
+  }
+
+  _nextPhase(phase) {
+    this._phase = phase;
+    this._phaseT = 0;
+    if (phase === 'riding') this._nextPhaseTime = this._ridingDuration();
+    if (phase === 'air')    this._nextPhaseTime = this._airtimeDuration();
+  }
+}
+
+
+/* ══════════════════════════════════════════════════════════════════
+   MODULE 6: App — wires everything together
+══════════════════════════════════════════════════════════════════ */
+class App {
+
+  constructor() {
+    // ── Config (driven by sliders)
+    this.config = {
+      alpha:              0.15,
+      freefallThresholdG: 0.25,
+      landingThresholdG:  2.0,
+      minAirtimeMs:       250,
+    };
+
+    // ── Signal state (no allocations in hot path — primitive vars)
+    this._filteredMag = 1.0;
+    this._jumps = [];
+
+    // ── Instantiate modules
+    this._fsm = new JumpStateMachine(
+      this.config,
+      this._onJump.bind(this),
+      this._onStateChange.bind(this)
+    );
+
+    this._waveform = new WaveformRenderer(document.getElementById('waveform'));
+    this._session  = null;
+    this._sim      = null;
+    this._mode     = 'idle'; // 'idle' | 'real' | 'sim'
+
+    // ── UI refs
+    this._ui = {
+      stateNodes:    {
+        GROUND_RIDING:    document.getElementById('stateGround'),
+        AIRBORNE_FREEFALL:document.getElementById('stateAirborne'),
+        LANDING_IMPACT:   document.getElementById('stateLanding'),
+      },
+      metricMag:     document.getElementById('metricMag'),
+      metricGyro:    document.getElementById('metricGyro'),
+      metricAirtime: document.getElementById('metricAirtime'),
+      metricJumps:   document.getElementById('metricJumps'),
+      sampleRate:    document.getElementById('sampleRate'),
+      filterTag:     document.getElementById('filterTag'),
+      logCount:      document.getElementById('logCount'),
+      jumpTableBody: document.getElementById('jumpTableBody'),
+      jumpTable:     document.getElementById('jumpTable'),
+      emptyState:    document.getElementById('emptyState'),
+      btnEnable:     document.getElementById('btnEnable'),
+      btnSimulate:   document.getElementById('btnSimulate'),
+      btnStop:       document.getElementById('btnStop'),
+      btnClear:      document.getElementById('btnClear'),
+      accelBadge:    document.getElementById('accelBadge'),
+      gyroBadge:     document.getElementById('gyroBadge'),
+      sessionBadge:  document.getElementById('sessionBadge'),
+      sessionLabel:  document.getElementById('sessionLabel'),
+      accelDot:      document.getElementById('accelDot'),
+      gyroDot:       document.getElementById('gyroDot'),
+      sessionDot:    document.getElementById('sessionDot'),
+      impactOverlay: document.getElementById('impactOverlay'),
+      airborneBanner:document.getElementById('airborneBanner'),
+      permissionNote:document.getElementById('permissionNote'),
+    };
+
+    // Track UI update throttling (draw at 30fps max)
+    this._lastUiUpdate = 0;
+    this._currentGyroMag = 0;
+    this._airtimeInterval = null;
+
+    this._bindEvents();
+    this._updateStateUI(JumpStateMachine.State.GROUND_RIDING);
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // SENSOR DATA PIPELINE — hot path
+  // Called ~60Hz. Keep allocations to ZERO here.
+  // ─────────────────────────────────────────────────────────────
+  _processSensorFrame(frame) {
+    const SP = SignalProcessor;
+
+    // 1. Euclidean magnitude of raw accelerometer (m/s²)
+    const rawMagMs2 = SP.euclideanMagnitude(frame.ax, frame.ay, frame.az);
+
+    // 2. Convert to G
+    const rawMagG = SP.toG(rawMagMs2);
+
+    // 3. Low-pass filter — kill engine vibration, preserve macro motion
+    this._filteredMag = SP.lowPassFilter(rawMagG, this._filteredMag, this.config.alpha);
+
+    // 4. Gyro magnitude (orientation-agnostic rotational speed)
+    const gyroMag = SP.euclideanMagnitude(frame.gx, frame.gy, frame.gz);
+    this._currentGyroMag = gyroMag;
+
+    // 5. Feed state machine
+    const state = this._fsm.update(this._filteredMag, gyroMag, frame.timestamp);
+
+    // 6. Feed waveform ring buffer (every frame, no skip)
+    this._waveform.push(this._filteredMag);
+
+    // 7. Throttled UI update (30fps cap to avoid layout thrashing)
+    const now = performance.now();
+    if (now - this._lastUiUpdate > 33) {
+      this._lastUiUpdate = now;
+      this._updateLiveUI(frame.hz, state);
+    }
+  }
+
+  _updateLiveUI(hz, state) {
+    this._ui.metricMag.textContent  = this._filteredMag.toFixed(2);
+    this._ui.sampleRate.textContent = hz ? `${hz} Hz` : '…';
+
+    // Airtime live counter
+    if (state === JumpStateMachine.State.AIRBORNE_FREEFALL && this._fsm._takeoffTime) {
+      const elapsed = performance.now() - this._fsm._takeoffTime;
+      this._ui.metricAirtime.textContent = Math.round(elapsed);
+      if (this._currentGyroMag > parseFloat(this._ui.metricGyro.textContent)) {
+        this._ui.metricGyro.textContent = Math.round(this._currentGyroMag);
+      }
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // STATE MACHINE CALLBACKS
+  // ─────────────────────────────────────────────────────────────
+  _onStateChange(newState, prevState) {
+    this._updateStateUI(newState);
+
+    if (newState === JumpStateMachine.State.AIRBORNE_FREEFALL) {
+      this._ui.airborneBanner.classList.add('visible');
+      this._ui.metricGyro.textContent = '0';
+    }
+
+    if (newState === JumpStateMachine.State.LANDING_IMPACT) {
+      this._ui.airborneBanner.classList.remove('visible');
+      this._flashImpact();
+    }
+
+    if (newState === JumpStateMachine.State.GROUND_RIDING) {
+      this._ui.airborneBanner.classList.remove('visible');
+    }
+  }
+
+  _onJump(event) {
+    // Immutable event received — log it
+    this._jumps.unshift(event); // newest at top
+    this._ui.metricJumps.textContent = event.id;
+    this._ui.metricAirtime.textContent = event.airtimeMs;
+    this._ui.metricGyro.textContent = event.peakAngularVelDps;
+    this._appendJumpRow(event);
+    this._ui.logCount.textContent = `${event.id} jump${event.id !== 1 ? 's' : ''}`;
+
+    console.info('[JumpEvent]', event);
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // SESSION CONTROL
+  // ─────────────────────────────────────────────────────────────
+  async _startReal() {
+    try {
+      this._session = new SensorSession(this._processSensorFrame.bind(this));
+      await this._session.start();
+      this._mode = 'real';
+      this._setSessionActive(true, 'LIVE');
+      this._ui.permissionNote.style.display = 'none';
+    } catch(e) {
+      alert('Sensor error: ' + e.message + '\n\nTry the Simulate Ride button instead.');
+    }
+  }
+
+  _startSim() {
+    this._sim = new JumpSimulator(this._processSensorFrame.bind(this));
+    this._sim.start();
+    this._mode = 'sim';
+    this._setSessionActive(true, 'SIMULATING');
+    this._ui.permissionNote.style.display = 'none';
+  }
+
+  _stop() {
+    if (this._session) { this._session.stop(); this._session = null; }
+    if (this._sim)     { this._sim.stop();     this._sim = null; }
+    this._mode = 'idle';
+    this._setSessionActive(false, 'IDLE');
+  }
+
+  _setSessionActive(active, label) {
+    const ui = this._ui;
+    ui.sessionLabel.textContent = label;
+
+    if (active) {
+      ui.sessionBadge.className = 'sensor-badge active';
+      ui.sessionDot.classList.add('pulse');
+      ui.accelBadge.className   = 'sensor-badge active';
+      ui.accelDot.classList.add('pulse');
+      ui.gyroBadge.className    = 'sensor-badge active';
+      ui.gyroDot.classList.add('pulse');
+      ui.btnStop.disabled       = false;
+      ui.btnEnable.disabled     = true;
+      ui.btnSimulate.disabled   = true;
+    } else {
+      ui.sessionBadge.className = 'sensor-badge inactive';
+      ui.sessionDot.classList.remove('pulse');
+      ui.accelBadge.className   = 'sensor-badge inactive';
+      ui.accelDot.classList.remove('pulse');
+      ui.gyroBadge.className    = 'sensor-badge inactive';
+      ui.gyroDot.classList.remove('pulse');
+      ui.btnStop.disabled       = true;
+      ui.btnEnable.disabled     = false;
+      ui.btnSimulate.disabled   = false;
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // UI HELPERS
+  // ─────────────────────────────────────────────────────────────
+  _updateStateUI(activeState) {
+    Object.entries(this._ui.stateNodes).forEach(([state, el]) => {
+      el.classList.toggle('active', state === activeState);
+    });
+  }
+
+  _flashImpact() {
+    const overlay = this._ui.impactOverlay;
+    overlay.classList.add('flash');
+    setTimeout(() => overlay.classList.remove('flash'), 150);
+  }
+
+  _appendJumpRow(event) {
+    this._ui.emptyState.style.display = 'none';
+    this._ui.jumpTable.style.display  = '';
+
+    const timeStr = event.timestamp.toLocaleTimeString('en-US', { hour12: false });
+    const airSec  = (event.airtimeMs / 1000).toFixed(2);
+    const quality = this._jumpQuality(event);
+
+    const tr = document.createElement('tr');
+    tr.className = 'new-entry';
+    tr.innerHTML = `
+      <td class="jump-num">#${event.id}</td>
+      <td class="timestamp">${timeStr}</td>
+      <td class="airtime">${event.airtimeMs}<span style="font-size:10px;opacity:0.5">ms</span> <span style="color:var(--text-dim);font-size:10px">(${airSec}s)</span></td>
+      <td class="impact ${event.impactG > 3.5 ? 'heavy' : ''}">${event.impactG.toFixed(1)}G</td>
+      <td class="peak-gyro">${event.peakAngularVelDps}°/s</td>
+      <td><span style="color:${quality.color};font-size:11px;letter-spacing:0.05em">${quality.label}</span></td>
+    `;
+
+    this._ui.jumpTableBody.prepend(tr);
+  }
+
+  _jumpQuality(event) {
+    // Classify jump based on airtime + rotation
+    if (event.airtimeMs > 1200 && event.peakAngularVelDps > 300) return { label: '★ WHIP',    color: 'var(--accent-hot)' };
+    if (event.airtimeMs > 1000)                                   return { label: '◆ BIG AIR', color: 'var(--accent-amber)' };
+    if (event.airtimeMs > 600  && event.peakAngularVelDps > 150)  return { label: '▲ STYLED',  color: 'var(--accent-ice)' };
+    if (event.airtimeMs > 500)                                    return { label: '● SOLID',   color: 'var(--accent-lime)' };
+    return                                                               { label: '· BASIC',   color: 'var(--text-dim)' };
+  }
+
+  _clearLog() {
+    this._jumps = [];
+    this._fsm._jumpCount = 0;
+    this._ui.jumpTableBody.innerHTML = '';
+    this._ui.jumpTable.style.display = 'none';
+    this._ui.emptyState.style.display = '';
+    this._ui.metricJumps.textContent = '0';
+    this._ui.metricAirtime.textContent = '0';
+    this._ui.metricGyro.textContent = '0.0';
+    this._ui.logCount.textContent = '0 jumps';
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // SLIDER CONFIG BINDING
+  // ─────────────────────────────────────────────────────────────
+  _bindEvents() {
+    this._ui.btnEnable.addEventListener('click', () => this._startReal());
+    this._ui.btnSimulate.addEventListener('click', () => this._startSim());
+    this._ui.btnStop.addEventListener('click', () => this._stop());
+    this._ui.btnClear.addEventListener('click', () => this._clearLog());
+
+    const bind = (id, key, display, fmt) => {
+      const el = document.getElementById(id);
+      const lbl = document.getElementById(display);
+      el.addEventListener('input', () => {
+        const v = parseFloat(el.value);
+        this.config[key] = v;
+        this._fsm.config[key] = v;
+        lbl.textContent = fmt(v);
+        if (key === 'alpha') this._ui.filterTag.textContent = `LPF α=${v.toFixed(2)}`;
+        if (key === 'freefallThresholdG' || key === 'landingThresholdG') {
+          this._waveform.setThresholds(this.config.freefallThresholdG, this.config.landingThresholdG);
+        }
+      });
+    };
+
+    bind('cfgAlpha',    'alpha',              'valAlpha',    v => v.toFixed(2));
+    bind('cfgFreefall', 'freefallThresholdG', 'valFreefall', v => `${v.toFixed(2)} G`);
+    bind('cfgLanding',  'landingThresholdG',  'valLanding',  v => `${v.toFixed(1)} G`);
+    bind('cfgDebounce', 'minAirtimeMs',        'valDebounce', v => `${Math.round(v)} ms`);
+  }
+}
+
+// ── Boot
+window.addEventListener('DOMContentLoaded', () => {
+  window._app = new App();
+});
+</script>
+</body>
+</html>
