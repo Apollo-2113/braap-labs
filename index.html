@@ -1293,6 +1293,7 @@ class App {
         airtimeSec:      (j.airtimeMs / 1000).toFixed(3),
         airtimeMs:       j.airtimeMs,
         impactG:         j.impactG,
+        takeoffSpeedMph: j.takeoffSpeedMph ?? null,
         distanceFt:      j.distanceFt,
         distanceMethod:  j.distLabel || 'unknown',
         peakRotationDps: j.peakW,
@@ -1383,46 +1384,47 @@ class App {
   }
 
   _onJump(e) {
-    // ── Distance calculation — best available method
+    // ── Distance calculation
     let distFt   = null;
     let distLabel = 'LAST JUMP';
 
     const landingState = this._gps.snapshotState();
     const t = this._takeoffGpsState;
 
+    // Speed-based estimate — most reliable for short jumps (<30ft)
+    // GPS position error (±5-10m) exceeds actual jump distance at these speeds
+    const speedMph = t?.speed ?? null;
+    const estFt = speedMph !== null
+      ? Math.round(speedMph * 1.46667 * (e.airtimeMs / 1000) * this._arcFactor)
+      : Math.round(25 * 1.46667 * (e.airtimeMs / 1000) * this._arcFactor);
+    const estLabel = speedMph !== null ? 'EST DIST' : '~ EST';
+
+    // GPS Haversine — only trust it for longer jumps where GPS error is < 50% of distance
     if (t && t.coords && landingState.coords) {
       const haversine = haversineDistFt(
         t.coords.lat, t.coords.lon,
         landingState.coords.lat, landingState.coords.lon
       );
-      if (haversine > 2) {
-        // GPS moved — use true position distance
+      // Only use GPS if it moved significantly AND result is plausible vs speed estimate
+      // GPS accuracy ~16ft, so only trust it when jump is >40ft
+      if (haversine > 40 && haversine < estFt * 2.5) {
         distFt    = Math.round(haversine);
         distLabel = 'GPS DIST';
-      } else if (t.speed !== null) {
-        // GPS didn't update (< 1Hz) — fall back to speed × airtime
-        const speedFps = t.speed * 1.46667;
-        distFt    = Math.round(speedFps * (e.airtimeMs / 1000) * this._arcFactor);
-        distLabel = 'EST DIST';
+      } else {
+        distFt    = estFt;
+        distLabel = estLabel;
       }
-    } else if (t && t.speed !== null) {
-      // Have speed but no coords
-      const speedFps = t.speed * 1.46667;
-      distFt    = Math.round(speedFps * (e.airtimeMs / 1000) * this._arcFactor);
-      distLabel = 'EST DIST';
     } else {
-      // No GPS at all — airtime-based estimate
-      // Assumes ~25mph approach speed typical for MX
-      const speedFps = 25 * 1.46667;
-      distFt    = Math.round(speedFps * (e.airtimeMs / 1000) * this._arcFactor);
-      distLabel = '~ EST';
+      distFt    = estFt;
+      distLabel = estLabel;
     }
 
     this._lastDistFt = distFt;
     document.getElementById('nixieDist').innerHTML = distFt + '<span class="unit">ft</span>';
     document.getElementById('distSub').textContent = distLabel;
 
-    const eventWithDist = Object.freeze({ ...e, distanceFt: distFt, distLabel });
+    // Include takeoff speed in event for export diagnostics
+    const eventWithDist = Object.freeze({ ...e, distanceFt: distFt, distLabel, takeoffSpeedMph: speedMph ? parseFloat(speedMph.toFixed(1)) : null });
     this._jumps.unshift(eventWithDist);
     document.getElementById('nixieTime').innerHTML = (e.airtimeMs/1000).toFixed(3)+'<span class="unit">s</span>';
     document.getElementById('jumpCountSub').textContent = `SESSION — ${e.id} JUMP${e.id!==1?'S':''}`;
