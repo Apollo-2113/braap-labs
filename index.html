@@ -177,69 +177,6 @@
   }
 
   /* ── BIG METRICS ROW ── */
-  /* ── METRICS REDESIGN ── */
-  .metrics-hero {
-    background: var(--bg-card);
-    border: 1px solid var(--border-dim);
-    border-radius: 4px;
-    padding: 16px 20px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    position: relative;
-    overflow: hidden;
-  }
-  .metrics-hero::before {
-    content: '';
-    position: absolute; top: 0; left: 0; right: 0;
-    height: 2px;
-    background: var(--accent-hot);
-    opacity: 0.7;
-  }
-  .metrics-hero-left {
-    display: flex;
-    flex-direction: column;
-  }
-  .metrics-hero-value {
-    font-family: var(--font-display);
-    font-weight: 900;
-    font-size: 64px;
-    line-height: 1;
-    color: var(--accent-hot);
-    letter-spacing: -0.02em;
-    transition: color 0.2s;
-  }
-  .metrics-hero-label {
-    font-family: var(--font-mono);
-    font-size: 10px;
-    color: var(--text-secondary);
-    text-transform: uppercase;
-    letter-spacing: 0.14em;
-    margin-top: 6px;
-  }
-  .metrics-hero-unit {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    color: var(--text-dim);
-  }
-  .metrics-hero-right {
-    text-align: right;
-  }
-  .metrics-hero-sublabel {
-    font-family: var(--font-mono);
-    font-size: 10px;
-    color: var(--text-dim);
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-  }
-  .metrics-hero-subvalue {
-    font-family: var(--font-display);
-    font-weight: 700;
-    font-size: 22px;
-    color: var(--text-secondary);
-    margin-top: 2px;
-  }
-
   .metrics-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -572,10 +509,6 @@
       <div class="dot" id="gyroDot"></div>
       <span>GYRO</span>
     </div>
-    <div class="sensor-badge inactive" id="gpsBadge">
-      <div class="dot" id="gpsDot"></div>
-      <span>GPS</span>
-    </div>
     <div class="sensor-badge inactive" id="sessionBadge">
       <div class="dot" id="sessionDot"></div>
       <span id="sessionLabel">IDLE</span>
@@ -610,21 +543,7 @@
     </div>
   </div>
 
-  <!-- SPEED HERO CARD -->
-  <div class="metrics-hero">
-    <div class="metrics-hero-left">
-      <div class="metrics-hero-label">Speed at Takeoff <span style="color:var(--text-dim);font-size:9px" id="speedUnit">(GPS)</span></div>
-      <div class="metrics-hero-value" id="metricSpeed">--</div>
-      <div class="metrics-hero-unit">mph</div>
-    </div>
-    <div class="metrics-hero-right">
-      <div class="metrics-hero-sublabel">Jump Count</div>
-      <div class="metrics-hero-subvalue" id="metricJumps" style="color:var(--accent-lime);font-size:36px;font-weight:900">0</div>
-      <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);margin-top:2px">session total</div>
-    </div>
-  </div>
-
-  <!-- LIVE METRICS 2x2 -->
+  <!-- LIVE METRICS -->
   <div class="metrics-grid">
     <div class="metric-card" style="--accent-color: var(--accent-ice)">
       <div class="metric-label">Total Accel Magnitude</div>
@@ -636,10 +555,15 @@
       <div class="metric-value" id="metricGyro">0.0</div>
       <div class="metric-unit">°/s (jump peak)</div>
     </div>
-    <div class="metric-card" style="--accent-color: var(--accent-lime); grid-column: span 2">
-      <div class="metric-label">Airtime</div>
-      <div class="metric-value large" id="metricAirtime" style="font-size:52px">0.00</div>
-      <div class="metric-unit">seconds</div>
+    <div class="metric-card" style="--accent-color: var(--accent-lime)">
+      <div class="metric-label">Airtime Counter</div>
+      <div class="metric-value" id="metricAirtime">0</div>
+      <div class="metric-unit">milliseconds</div>
+    </div>
+    <div class="metric-card" style="--accent-color: var(--accent-hot)">
+      <div class="metric-label">Jump Count</div>
+      <div class="metric-value large" id="metricJumps">0</div>
+      <div class="metric-unit">session total</div>
     </div>
   </div>
 
@@ -703,10 +627,9 @@
           <tr>
             <th>#</th>
             <th>Timestamp</th>
-            <th>Airtime (s)</th>
+            <th>Airtime</th>
             <th>Impact (G)</th>
             <th>Peak ω (°/s)</th>
-            <th>Speed (mph)</th>
             <th>Quality</th>
           </tr>
         </thead>
@@ -832,7 +755,6 @@ class JumpStateMachine {
     this._takeoffTime     = null;   // performance.now() at takeoff
     this._peakAngularVel  = 0;      // deg/s, tracked during flight
     this._jumpCount       = 0;
-    this._takeoffSpeedMph = null;   // GPS speed snapshot at takeoff (set by App)
 
     // Gyroscope stability tracker (smooth angular velocity)
     this._filteredGyroMag = 0;
@@ -952,9 +874,6 @@ class JumpStateMachine {
       airtimeMs:        Math.round(airtimeMs),
       impactG:          parseFloat(impactG.toFixed(2)),
       peakAngularVelDps: Math.round(this._peakAngularVel),
-      takeoffSpeedMph:  this._takeoffSpeedMph !== null
-                          ? parseFloat(this._takeoffSpeedMph.toFixed(1))
-                          : null,
     });
 
     this.onJumpDetected(event);
@@ -1242,86 +1161,7 @@ class WaveformRenderer {
 
 
 /* ══════════════════════════════════════════════════════════════════
-   MODULE 5: GpsTracker
-   Polls navigator.geolocation for speed data (~1Hz).
-   Speed is stored and snapshotted at takeoff moment.
-
-   Mobile port notes:
-   - iOS: CLLocationManager with desiredAccuracy = kCLLocationAccuracyBestForNavigation
-   - Android: LocationManager with GPS_PROVIDER or FusedLocationProviderClient
-   - Both require location permission (always-on for background use)
-   - GPS speed (CLLocation.speed / Location.getSpeed()) is more accurate than
-     derived speed from position deltas — use it directly where available.
-══════════════════════════════════════════════════════════════════ */
-class GpsTracker {
-
-  constructor(onSpeedUpdate, onStatusChange) {
-    this._onSpeedUpdate  = onSpeedUpdate;   // callback(speedMph: number)
-    this._onStatusChange = onStatusChange;  // callback(status: string)
-    this._watchId        = null;
-    this._currentSpeedMph = null;
-    this._active         = false;
-  }
-
-  start() {
-    if (!navigator.geolocation) {
-      this._onStatusChange('unavailable');
-      return;
-    }
-
-    this._onStatusChange('acquiring');
-
-    this._watchId = navigator.geolocation.watchPosition(
-      (pos) => {
-        this._active = true;
-        // pos.coords.speed is in m/s — convert to mph
-        // Returns null if device can't determine speed
-        if (pos.coords.speed !== null && pos.coords.speed >= 0) {
-          this._currentSpeedMph = pos.coords.speed * 2.23694;
-          this._onSpeedUpdate(this._currentSpeedMph);
-          this._onStatusChange('active');
-        } else {
-          // Speed unavailable (stationary or GPS limitation)
-          this._currentSpeedMph = 0;
-          this._onSpeedUpdate(0);
-          this._onStatusChange('active');
-        }
-      },
-      (err) => {
-        console.warn('[GPS] Error:', err.message);
-        this._onStatusChange(err.code === 1 ? 'denied' : 'error');
-      },
-      {
-        enableHighAccuracy: true,   // use GPS chip, not cell/wifi
-        maximumAge:         500,    // accept positions up to 500ms old
-        timeout:            10000,  // give up after 10s if no fix
-      }
-    );
-  }
-
-  stop() {
-    if (this._watchId !== null) {
-      navigator.geolocation.clearWatch(this._watchId);
-      this._watchId = null;
-    }
-    this._active = false;
-    this._currentSpeedMph = null;
-  }
-
-  /**
-   * Snapshot current speed — called at takeoff moment.
-   * Returns null if GPS not yet locked.
-   */
-  snapshotSpeed() {
-    return this._currentSpeedMph;
-  }
-
-  get active() { return this._active; }
-}
-
-
-/* ══════════════════════════════════════════════════════════════════
-   MODULE 6: JumpSimulator
+   MODULE 5: JumpSimulator
    Generates realistic synthetic sensor data for desktop testing.
    Mimics: Takeoff → freefall → midair rotation → landing impact
 ══════════════════════════════════════════════════════════════════ */
@@ -1441,7 +1281,7 @@ class JumpSimulator {
 
 
 /* ══════════════════════════════════════════════════════════════════
-   MODULE 7: App — wires everything together
+   MODULE 6: App — wires everything together
 ══════════════════════════════════════════════════════════════════ */
 class App {
 
@@ -1457,19 +1297,6 @@ class App {
     // ── Signal state (no allocations in hot path — primitive vars)
     this._filteredMag = 1.0;
     this._jumps = [];
-    this._currentSpeedMph = null; // latest GPS speed
-
-    // ── GPS tracker
-    this._gps = new GpsTracker(
-      (mph) => {
-        this._currentSpeedMph = mph;
-        // Update live speed display only when not airborne (takeoff freezes it)
-        if (this._fsm.state !== JumpStateMachine.State.AIRBORNE_FREEFALL) {
-          this._ui.metricSpeed.textContent = mph.toFixed(1);
-        }
-      },
-      (status) => this._updateGpsStatus(status)
-    );
 
     // ── Instantiate modules
     this._fsm = new JumpStateMachine(
@@ -1504,10 +1331,6 @@ class App {
       btnSimulate:   document.getElementById('btnSimulate'),
       btnStop:       document.getElementById('btnStop'),
       btnClear:      document.getElementById('btnClear'),
-      metricSpeed:   document.getElementById('metricSpeed'),
-      speedUnit:     document.getElementById('speedUnit'),
-      gpsBadge:      document.getElementById('gpsBadge'),
-      gpsDot:        document.getElementById('gpsDot'),
       accelBadge:    document.getElementById('accelBadge'),
       gyroBadge:     document.getElementById('gyroBadge'),
       sessionBadge:  document.getElementById('sessionBadge'),
@@ -1570,7 +1393,7 @@ class App {
     // Airtime live counter
     if (state === JumpStateMachine.State.AIRBORNE_FREEFALL && this._fsm._takeoffTime) {
       const elapsed = performance.now() - this._fsm._takeoffTime;
-      this._ui.metricAirtime.textContent = (elapsed / 1000).toFixed(2);
+      this._ui.metricAirtime.textContent = Math.round(elapsed);
       if (this._currentGyroMag > parseFloat(this._ui.metricGyro.textContent)) {
         this._ui.metricGyro.textContent = Math.round(this._currentGyroMag);
       }
@@ -1586,12 +1409,6 @@ class App {
     if (newState === JumpStateMachine.State.AIRBORNE_FREEFALL) {
       this._ui.airborneBanner.classList.add('visible');
       this._ui.metricGyro.textContent = '0';
-      // Snapshot speed at the moment of takeoff — freeze display
-      this._takeoffSpeedMph = this._currentSpeedMph;
-      this._fsm._takeoffSpeedMph = this._takeoffSpeedMph; // pass into FSM for JumpEvent
-      if (this._takeoffSpeedMph !== null) {
-        this._ui.metricSpeed.textContent = this._takeoffSpeedMph.toFixed(1);
-      }
     }
 
     if (newState === JumpStateMachine.State.LANDING_IMPACT) {
@@ -1608,7 +1425,7 @@ class App {
     // Immutable event received — log it
     this._jumps.unshift(event); // newest at top
     this._ui.metricJumps.textContent = event.id;
-    this._ui.metricAirtime.textContent = (event.airtimeMs / 1000).toFixed(2);
+    this._ui.metricAirtime.textContent = event.airtimeMs;
     this._ui.metricGyro.textContent = event.peakAngularVelDps;
     this._appendJumpRow(event);
     this._ui.logCount.textContent = `${event.id} jump${event.id !== 1 ? 's' : ''}`;
@@ -1623,7 +1440,6 @@ class App {
     try {
       this._session = new SensorSession(this._processSensorFrame.bind(this));
       await this._session.start();
-      this._gps.start(); // start GPS alongside sensors
       this._mode = 'real';
       this._setSessionActive(true, 'LIVE');
       this._ui.permissionNote.style.display = 'none';
@@ -1635,7 +1451,6 @@ class App {
   _startSim() {
     this._sim = new JumpSimulator(this._processSensorFrame.bind(this));
     this._sim.start();
-    this._gps.start(); // also start GPS in sim mode for real speed data
     this._mode = 'sim';
     this._setSessionActive(true, 'SIMULATING');
     this._ui.permissionNote.style.display = 'none';
@@ -1644,7 +1459,6 @@ class App {
   _stop() {
     if (this._session) { this._session.stop(); this._session = null; }
     if (this._sim)     { this._sim.stop();     this._sim = null; }
-    this._gps.stop();
     this._mode = 'idle';
     this._setSessionActive(false, 'IDLE');
   }
@@ -1670,41 +1484,9 @@ class App {
       ui.accelDot.classList.remove('pulse');
       ui.gyroBadge.className    = 'sensor-badge inactive';
       ui.gyroDot.classList.remove('pulse');
-      ui.gpsBadge.className     = 'sensor-badge inactive';
-      ui.gpsDot.classList.remove('pulse');
       ui.btnStop.disabled       = true;
       ui.btnEnable.disabled     = false;
       ui.btnSimulate.disabled   = false;
-    }
-  }
-
-  _updateGpsStatus(status) {
-    const badge = this._ui.gpsBadge;
-    const dot   = this._ui.gpsDot;
-    const unit  = this._ui.speedUnit;
-    switch(status) {
-      case 'acquiring':
-        badge.className = 'sensor-badge inactive';
-        dot.classList.remove('pulse');
-        unit.textContent = '(acquiring…)';
-        break;
-      case 'active':
-        badge.className = 'sensor-badge active';
-        dot.classList.add('pulse');
-        unit.textContent = '(GPS)';
-        break;
-      case 'denied':
-        badge.className = 'sensor-badge error';
-        dot.classList.remove('pulse');
-        unit.textContent = '(denied)';
-        this._ui.metricSpeed.textContent = '--';
-        break;
-      case 'unavailable':
-      case 'error':
-        badge.className = 'sensor-badge error';
-        unit.textContent = '(unavail)';
-        this._ui.metricSpeed.textContent = '--';
-        break;
     }
   }
 
@@ -1728,6 +1510,7 @@ class App {
     this._ui.jumpTable.style.display  = '';
 
     const timeStr = event.timestamp.toLocaleTimeString('en-US', { hour12: false });
+    const airSec  = (event.airtimeMs / 1000).toFixed(2);
     const quality = this._jumpQuality(event);
 
     const tr = document.createElement('tr');
@@ -1735,7 +1518,7 @@ class App {
     tr.innerHTML = `
       <td class="jump-num">#${event.id}</td>
       <td class="timestamp">${timeStr}</td>
-      <td class="airtime">${(event.airtimeMs / 1000).toFixed(2)}<span style="font-size:10px;opacity:0.5">s</span></td>
+      <td class="airtime">${event.airtimeMs}<span style="font-size:10px;opacity:0.5">ms</span> <span style="color:var(--text-dim);font-size:10px">(${airSec}s)</span></td>
       <td class="impact ${event.impactG > 3.5 ? 'heavy' : ''}">${event.impactG.toFixed(1)}G</td>
       <td class="peak-gyro">${event.peakAngularVelDps}°/s</td>
       <td><span style="color:${quality.color};font-size:11px;letter-spacing:0.05em">${quality.label}</span></td>
@@ -1760,7 +1543,7 @@ class App {
     this._ui.jumpTable.style.display = 'none';
     this._ui.emptyState.style.display = '';
     this._ui.metricJumps.textContent = '0';
-    this._ui.metricAirtime.textContent = '0.00';
+    this._ui.metricAirtime.textContent = '0';
     this._ui.metricGyro.textContent = '0.0';
     this._ui.logCount.textContent = '0 jumps';
   }
