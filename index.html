@@ -831,7 +831,8 @@ class Wave {
 /* ── Simulator ── */
 class Sim {
   constructor(cb) { this._cb=cb; this._id=null; this._pt=0; this._ph='ride'; this._pht=0; this._nextT=this._rideT(); }
-  _rideT(){return 2000+Math.random()*2500;} _airT(){return 400+Math.random()*700;}
+  _rideT(){return 600+Math.random()*800;}   // 0.6–1.4s between jumps (was 2–4.5s)
+  _airT(){return 500+Math.random()*900;}    // 0.5–1.4s airtime (was 0.4–1.1s)
   start(){let last=performance.now();const t=()=>{const now=performance.now();this._pt+=now-last;this._pht+=now-last;last=now;this._cb(this._frame(now));this._id=requestAnimationFrame(t);};this._id=requestAnimationFrame(t);}
   stop(){if(this._id)cancelAnimationFrame(this._id);this._id=null;this._ph='ride';this._pht=0;this._nextT=this._rideT();}
   _frame(now){
