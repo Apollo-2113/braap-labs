@@ -467,6 +467,79 @@
   }
   .demo-callout strong { font-weight: bold; color: #fff; }
 
+  /* ── JUMP CARDS ── */
+  .jump-cards-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .jump-card {
+    display: grid;
+    grid-template-columns: 48px 1fr 1fr 1fr 80px;
+    align-items: center;
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(30,37,48,0.6);
+    transition: background 0.15s;
+    gap: 8px;
+  }
+  .jump-card:hover { background: var(--bg-elevated); }
+  .jump-card.new-entry { animation: row-enter 0.4s ease-out; }
+  .jump-card.is-best {
+    background: rgba(170,255,0,0.04);
+    border-left: 2px solid var(--accent-lime);
+  }
+
+  @media (max-width: 520px) {
+    .jump-card {
+      grid-template-columns: 40px 1fr 1fr 1fr 60px;
+      padding: 10px 12px;
+      gap: 4px;
+    }
+  }
+
+  .jc-num {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+  .jc-num .best-crown { color: var(--accent-lime); font-size: 13px; }
+
+  .jc-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .jc-label {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .jc-value {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 18px;
+    line-height: 1;
+  }
+  .jc-delta {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    line-height: 1;
+    margin-top: 2px;
+  }
+  .delta-up   { color: #4ade80; }  /* green = better airtime/rotation */
+  .delta-down { color: var(--accent-hot); } /* red = less */
+  .delta-same { color: var(--text-dim); }
+
+  .jc-quality {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    text-align: right;
+    letter-spacing: 0.05em;
+  }
+
   /* ── SCROLLBAR ── */
   ::-webkit-scrollbar { width: 6px; }
   ::-webkit-scrollbar-track { background: transparent; }
@@ -617,24 +690,26 @@
   <!-- JUMP LOG -->
   <div class="panel">
     <div class="panel-header">
-      <div class="panel-title">Jump Log</div>
-      <span class="panel-tag" id="logCount">0 jumps</span>
+      <div class="panel-title">Jump Log & Comparison</div>
+      <div style="display:flex;gap:12px;align-items:center">
+        <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim)">
+          <span style="color:#4ade80">▲</span> improved &nbsp;
+          <span style="color:var(--accent-hot)">▼</span> declined
+        </span>
+        <span class="panel-tag" id="logCount">0 jumps</span>
+      </div>
     </div>
+
+    <!-- BEST JUMP BANNER — shown after 2+ jumps -->
+    <div id="bestJumpBanner" style="display:none; padding:10px 16px; background:rgba(170,255,0,0.05); border-bottom:1px solid rgba(170,255,0,0.15);">
+      <span style="font-family:var(--font-mono);font-size:10px;color:var(--accent-lime);text-transform:uppercase;letter-spacing:0.1em">
+        🏆 Best Airtime: <span id="bestAirtime">--</span>s &nbsp;·&nbsp; Jump #<span id="bestJumpNum">--</span>
+      </span>
+    </div>
+
     <div class="jump-log" id="jumpLog">
       <div class="empty-state" id="emptyState">No jumps recorded — start a session</div>
-      <table id="jumpTable" style="display:none">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Timestamp</th>
-            <th>Airtime (s)</th>
-            <th>Impact (G)</th>
-            <th>Peak ω (°/s)</th>
-            <th>Quality</th>
-          </tr>
-        </thead>
-        <tbody id="jumpTableBody"></tbody>
-      </table>
+      <div id="jumpCards"></div>
     </div>
   </div>
 
@@ -1324,8 +1399,10 @@ class App {
       sampleRate:    document.getElementById('sampleRate'),
       filterTag:     document.getElementById('filterTag'),
       logCount:      document.getElementById('logCount'),
-      jumpTableBody: document.getElementById('jumpTableBody'),
-      jumpTable:     document.getElementById('jumpTable'),
+      jumpCards:     document.getElementById('jumpCards'),
+      bestJumpBanner:document.getElementById('bestJumpBanner'),
+      bestAirtime:   document.getElementById('bestAirtime'),
+      bestJumpNum:   document.getElementById('bestJumpNum'),
       emptyState:    document.getElementById('emptyState'),
       btnEnable:     document.getElementById('btnEnable'),
       btnSimulate:   document.getElementById('btnSimulate'),
@@ -1507,24 +1584,116 @@ class App {
 
   _appendJumpRow(event) {
     this._ui.emptyState.style.display = 'none';
-    this._ui.jumpTable.style.display  = '';
 
-    const timeStr = event.timestamp.toLocaleTimeString('en-US', { hour12: false });
-    const airSec  = (event.airtimeMs / 1000).toFixed(2);
-    const quality = this._jumpQuality(event);
+    // Ensure the cards container has the list wrapper
+    if (!this._ui.jumpCards.querySelector('.jump-cards-list')) {
+      this._ui.jumpCards.innerHTML = '<div class="jump-cards-list"></div>';
+    }
+    const list = this._ui.jumpCards.querySelector('.jump-cards-list');
 
-    const tr = document.createElement('tr');
-    tr.className = 'new-entry';
-    tr.innerHTML = `
-      <td class="jump-num">#${event.id}</td>
-      <td class="timestamp">${timeStr}</td>
-      <td class="airtime">${(event.airtimeMs / 1000).toFixed(3)}<span style="font-size:10px;opacity:0.5">s</span></td>
-      <td class="impact ${event.impactG > 3.5 ? 'heavy' : ''}">${event.impactG.toFixed(1)}G</td>
-      <td class="peak-gyro">${event.peakAngularVelDps}°/s</td>
-      <td><span style="color:${quality.color};font-size:11px;letter-spacing:0.05em">${quality.label}</span></td>
+    // ── Get previous jump for delta calculation
+    const prev = this._jumps[1] || null; // _jumps is newest-first, current is [0]
+
+    // ── Delta helpers
+    const delta = (curr, prevVal, higherIsBetter = true) => {
+      if (!prev) return { html: '<span class="delta-same">FIRST</span>', better: null };
+      const diff = curr - prevVal;
+      const pct  = prevVal !== 0 ? ((diff / prevVal) * 100).toFixed(1) : '0';
+      const improved = higherIsBetter ? diff > 0 : diff < 0;
+      const neutral  = Math.abs(diff) < 0.001;
+      if (neutral) return { html: '<span class="delta-same">= same</span>', better: null };
+      const cls  = improved ? 'delta-up' : 'delta-down';
+      const sign = diff > 0 ? '▲' : '▼';
+      const abs  = Math.abs(diff);
+      return { html: `<span class="${cls}">${sign} ${pct}%</span>`, better: improved };
+    };
+
+    const airtimeDelta  = delta(event.airtimeMs,         prev?.airtimeMs,         true);
+    const impactDelta   = delta(event.impactG,            prev?.impactG,           false); // lower impact = better landing
+    const gyroDelta     = delta(event.peakAngularVelDps,  prev?.peakAngularVelDps, true);
+
+    // ── Best jump tracking
+    const bestMs   = Math.max(...this._jumps.map(j => j.airtimeMs));
+    const bestJump = this._jumps.find(j => j.airtimeMs === bestMs);
+    const isBest   = event.airtimeMs === bestMs && this._jumps.length > 1;
+
+    // Update best banner
+    if (this._jumps.length >= 2) {
+      this._ui.bestJumpBanner.style.display = '';
+      this._ui.bestAirtime.textContent  = (bestMs / 1000).toFixed(3);
+      this._ui.bestJumpNum.textContent  = bestJump.id;
+      // Re-render all cards to update best crown
+      this._rerenderAllCards();
+      return;
+    }
+
+    // ── Render single card (first jump)
+    this._renderCard(list, event, airtimeDelta, impactDelta, gyroDelta, false);
+  }
+
+  _rerenderAllCards() {
+    // Full re-render to update best crown and all deltas correctly
+    const list = this._ui.jumpCards.querySelector('.jump-cards-list');
+    list.innerHTML = '';
+    const bestMs = Math.max(...this._jumps.map(j => j.airtimeMs));
+
+    // _jumps is newest-first; render newest at top
+    for (let i = 0; i < this._jumps.length; i++) {
+      const event = this._jumps[i];
+      const prev  = this._jumps[i + 1] || null;
+
+      const delta = (curr, prevVal, higherIsBetter = true) => {
+        if (!prev) return { html: '<span class="delta-same">FIRST</span>', better: null };
+        const diff = curr - prevVal;
+        const pct  = prevVal !== 0 ? ((diff / prevVal) * 100).toFixed(1) : '0';
+        const improved = higherIsBetter ? diff > 0 : diff < 0;
+        const neutral  = Math.abs(diff) < 0.001;
+        if (neutral) return { html: '<span class="delta-same">= same</span>', better: null };
+        const cls  = improved ? 'delta-up' : 'delta-down';
+        const sign = diff > 0 ? '▲' : '▼';
+        return { html: `<span class="${cls}">${sign} ${Math.abs(pct)}%</span>`, better: improved };
+      };
+
+      this._renderCard(
+        list, event,
+        delta(event.airtimeMs,        prev?.airtimeMs,        true),
+        delta(event.impactG,           prev?.impactG,          false),
+        delta(event.peakAngularVelDps, prev?.peakAngularVelDps,true),
+        event.airtimeMs === bestMs
+      );
+    }
+  }
+
+  _renderCard(list, event, airtimeDelta, impactDelta, gyroDelta, isBest) {
+    const quality  = this._jumpQuality(event);
+    const timeStr  = event.timestamp.toLocaleTimeString('en-US', { hour12: false });
+
+    const card = document.createElement('div');
+    card.className = `jump-card new-entry${isBest ? ' is-best' : ''}`;
+    card.innerHTML = `
+      <div class="jc-num">
+        ${isBest ? '<div class="best-crown">🏆</div>' : ''}
+        <div>#${event.id}</div>
+        <div style="font-size:9px;color:var(--text-dim)">${timeStr}</div>
+      </div>
+      <div class="jc-stat">
+        <div class="jc-label">Airtime</div>
+        <div class="jc-value" style="color:var(--accent-ice)">${(event.airtimeMs/1000).toFixed(3)}<span style="font-size:11px;opacity:0.5">s</span></div>
+        <div class="jc-delta">${airtimeDelta.html}</div>
+      </div>
+      <div class="jc-stat">
+        <div class="jc-label">Impact</div>
+        <div class="jc-value" style="color:var(--accent-hot)">${event.impactG.toFixed(1)}<span style="font-size:11px;opacity:0.5">G</span></div>
+        <div class="jc-delta">${impactDelta.html}</div>
+      </div>
+      <div class="jc-stat">
+        <div class="jc-label">Rotation</div>
+        <div class="jc-value" style="color:var(--accent-amber)">${event.peakAngularVelDps}<span style="font-size:11px;opacity:0.5">°/s</span></div>
+        <div class="jc-delta">${gyroDelta.html}</div>
+      </div>
+      <div class="jc-quality" style="color:${quality.color}">${quality.label}</div>
     `;
-
-    this._ui.jumpTableBody.prepend(tr);
+    list.prepend(card);
   }
 
   _jumpQuality(event) {
@@ -1539,8 +1708,8 @@ class App {
   _clearLog() {
     this._jumps = [];
     this._fsm._jumpCount = 0;
-    this._ui.jumpTableBody.innerHTML = '';
-    this._ui.jumpTable.style.display = 'none';
+    this._ui.jumpCards.innerHTML = '';
+    this._ui.bestJumpBanner.style.display = 'none';
     this._ui.emptyState.style.display = '';
     this._ui.metricJumps.textContent = '0';
     this._ui.metricAirtime.textContent = '0.000';
