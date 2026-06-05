@@ -887,7 +887,7 @@ class Wave {
   constructor(el) {
     this._c = el; this._ctx = el.getContext('2d');
     this._buf = new Float32Array(300); this._h = 0;
-    this._ff = 0.40; this._land = 1.5; this._dirty = false;
+    this._ff = 0.60; this._land = 1.3; this._dirty = false;
     new ResizeObserver(()=>this._resize()).observe(el.parentElement);
     this._resize(); requestAnimationFrame(()=>this._loop());
   }
@@ -1123,7 +1123,7 @@ class App {
 
     this._wave = new Wave(document.getElementById('analogWave'));
     this._fsm  = new FSM(
-      { ff:0.40, land:1.5, minMs:150 },
+      { ff:0.60, land:1.3, minMs:100 },
       e => this._onJump(e),
       s => this._onState(s)
     );
@@ -1241,8 +1241,8 @@ class App {
     this._bikeType = type;
 
     const presets = {
-      electric: { ff: 0.40, land: 1.5, minMs: 150,
-        label: '⚡ ELECTRIC — ff:0.40G · land:1.5G · min:150ms' },
+      electric: { ff: 0.60, land: 1.3, minMs: 100,
+        label: '⚡ ELECTRIC — ff:0.60G · land:1.3G · min:100ms' },
       gas:      { ff: 0.25, land: 2.0, minMs: 250,
         label: '🔥 GAS — ff:0.25G · land:2.0G · min:250ms' },
     };
