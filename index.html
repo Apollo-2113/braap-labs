@@ -26,6 +26,94 @@
   --glass:     rgba(240,168,0,0.04);
 }
 
+/* ── STAR WARS THEME ── */
+body.sw {
+  --bg:        #000a0f;
+  --bg2:       #001520;
+  --bg3:       #001d2a;
+  --border:    #003048;
+  --border2:   #005070;
+  --chrome:    #00b4d8;
+  --chrome-dim:#005a78;
+  --chrome-hi: #90e0ef;
+  --white:     #caf0f8;
+  --white-dim: #4a90a0;
+  --red:       #ff3030;
+  --ice:       #00d4ff;
+  --ice-dim:   #005888;
+  --green:     #00ff88;
+  --needle:    #00d4ff;
+  --glass:     rgba(0,212,255,0.04);
+}
+
+/* SW texture — targeting grid */
+body.sw::before {
+  background:
+    repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,180,255,0.025) 3px, rgba(0,180,255,0.025) 4px),
+    repeating-linear-gradient(90deg, transparent, transparent 60px, rgba(0,180,255,0.015) 60px, rgba(0,180,255,0.015) 61px) !important;
+}
+
+/* SW nixie glow — blue instead of amber */
+body.sw .nixie {
+  color: #00d4ff !important;
+  text-shadow:
+    0 0 6px rgba(0,212,255,0.9),
+    0 0 18px rgba(0,212,255,0.5),
+    0 0 35px rgba(0,212,255,0.25),
+    1px 1px 0 rgba(0,0,0,0.6) !important;
+}
+body.sw .nixie-dist {
+  color: #00ff88 !important;
+  text-shadow:
+    0 0 8px rgba(0,255,136,0.85),
+    0 0 20px rgba(0,255,136,0.4) !important;
+}
+body.sw .speed-number { color: #00d4ff !important; }
+body.sw .speed-number.fast { color: #ff3030 !important; }
+body.sw .speed-number.mid  { color: #90e0ef !important; }
+body.sw .speed-bar-fill {
+  background: linear-gradient(90deg, #00ff88, #00d4ff, #ff3030) !important;
+  box-shadow: 0 0 6px rgba(0,212,255,0.6) !important;
+}
+
+/* SW canvas backgrounds */
+body.sw canvas#analogWave { background: #000a0f !important; }
+
+/* SW logo */
+body.sw .logo { color: #90e0ef !important; text-shadow: 0 0 20px rgba(0,212,255,0.4) !important; }
+body.sw .logo span { color: #00d4ff !important; }
+
+/* SW bike toggle slider */
+body.sw .bike-slider { background: #00d4ff !important; }
+body.sw .bike-opt.active { color: #000 !important; }
+
+/* SW buttons */
+body.sw .btn-start { background: linear-gradient(180deg, #001a10 0%, #000e08 100%) !important; border-color: #00ff88 !important; color: #00ff88 !important; }
+body.sw .btn-sim   { background: linear-gradient(180deg, #001520 0%, #000a0f 100%) !important; border-color: #005070 !important; color: #00d4ff !important; }
+body.sw .btn-export { border-color: #005070 !important; color: #90e0ef !important; }
+
+/* SW theme toggle button */
+.theme-toggle {
+  position: fixed;
+  top: 10px; right: 10px;
+  z-index: 500;
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: 20px;
+  padding: 5px 12px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--chrome-hi);
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.theme-toggle:hover { border-color: var(--chrome); }
+
+
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
@@ -658,6 +746,12 @@ canvas#analogWave {
 
 <div class="shell">
 
+  <!-- THEME TOGGLE -->
+  <button class="theme-toggle" id="themeToggle" onclick="window._app.toggleTheme()">
+    <span id="themeIcon">☀</span>
+    <span id="themeLabel">SW MODE</span>
+  </button>
+
   <!-- HEADER -->
   <div class="header-plate">
     <div class="logo">MOTO <span>AIR</span></div>
@@ -946,6 +1040,7 @@ class Wave {
 
     this._ff   = 0.80;
     this._land = 1.5;
+    this._swMode = false;
     this._dirty = false;
 
     // Touch/drag scrubbing
@@ -1073,11 +1168,28 @@ class Wave {
     const PAD = 8 * dpr, DH = H - PAD * 2;
 
     ctx.clearRect(0, 0, W, H);
-    ctx.fillStyle = '#080600';
+    const sw = this._swMode;
+    const traceColor   = sw ? '#00d4ff' : '#f0a800';
+    const glowColor    = sw ? 'rgba(0,212,255,0.5)'  : 'rgba(240,168,0,0.5)';
+    const brightColor  = sw ? '#80f0ff' : '#ffe040';
+    const brightGlow   = sw ? 'rgba(0,230,255,0.9)'  : 'rgba(255,200,0,0.9)';
+    const ffColor      = sw ? 'rgba(0,255,136,0.5)'  : 'rgba(96,200,64,0.4)';
+    const landColor    = sw ? 'rgba(255,48,48,0.6)'  : 'rgba(232,64,48,0.5)';
+    const gridColor    = sw ? 'rgba(0,48,72,0.6)'    : 'rgba(58,46,8,0.5)';
+    const bgColor      = sw ? '#000a0f'              : '#080600';
+    const airFillTop   = sw ? 'rgba(0,212,255,0.15)' : 'rgba(240,168,0,0.18)';
+    const airFillMid   = sw ? 'rgba(0,212,255,0.06)' : 'rgba(240,168,0,0.08)';
+    const airFillBot   = sw ? 'rgba(0,212,255,0.01)' : 'rgba(240,168,0,0.02)';
+    const takeoffLine  = sw ? 'rgba(0,255,136,0.7)'  : 'rgba(168,200,32,0.7)';
+    const landLine     = sw ? 'rgba(255,80,80,0.7)'  : 'rgba(232,100,32,0.7)';
+    const markerColor  = sw ? 'rgba(0,212,255,0.8)'  : 'rgba(240,200,64,0.8)';
+    const markerLine   = sw ? 'rgba(0,212,255,0.5)'  : 'rgba(240,200,64,0.6)';
+
+    ctx.fillStyle = bgColor;
     ctx.fillRect(0, 0, W, H);
 
     // Grid
-    ctx.strokeStyle = 'rgba(58,46,8,0.5)';
+    ctx.strokeStyle = gridColor;
     ctx.lineWidth = 1;
     for (let i = 1; i < 4; i++) {
       const y = PAD + DH / 4 * i;
@@ -1091,9 +1203,9 @@ class Wave {
     const ffy = PAD + DH - this._ff   * ys;
     const ldy = PAD + DH - this._land * ys;
     ctx.setLineDash([3 * dpr, 5 * dpr]);
-    ctx.strokeStyle = 'rgba(96,200,64,0.4)'; ctx.lineWidth = 1;
+    ctx.strokeStyle = ffColor; ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(0, ffy); ctx.lineTo(W, ffy); ctx.stroke();
-    ctx.strokeStyle = 'rgba(232,64,48,0.5)';
+    ctx.strokeStyle = landColor;
     ctx.beginPath(); ctx.moveTo(0, ldy); ctx.lineTo(W, ldy); ctx.stroke();
     ctx.setLineDash([]);
 
@@ -1116,27 +1228,27 @@ class Wave {
       const x2 = ((rEnd   - start) / (this._viewWidth - 1)) * W;
       // Background fill — warm amber glow
       const grad = ctx.createLinearGradient(0, PAD, 0, H - PAD);
-      grad.addColorStop(0,   'rgba(240,168,0,0.18)');
-      grad.addColorStop(0.5, 'rgba(240,168,0,0.08)');
-      grad.addColorStop(1,   'rgba(240,168,0,0.02)');
+      grad.addColorStop(0,   airFillTop);
+      grad.addColorStop(0.5, airFillMid);
+      grad.addColorStop(1,   airFillBot);
       ctx.fillStyle = grad;
       ctx.fillRect(x1, PAD, x2 - x1, DH);
       // Left edge line (takeoff)
-      ctx.strokeStyle = 'rgba(168,200,32,0.7)';
+      ctx.strokeStyle = takeoffLine;
       ctx.lineWidth   = 1.5 * dpr;
       ctx.setLineDash([]);
       ctx.beginPath(); ctx.moveTo(x1, PAD); ctx.lineTo(x1, H - PAD); ctx.stroke();
       // Right edge line (landing) — only if completed
       if (region.label) {
-        ctx.strokeStyle = 'rgba(232,100,32,0.7)';
+        ctx.strokeStyle = landLine;
         ctx.beginPath(); ctx.moveTo(x2, PAD); ctx.lineTo(x2, H - PAD); ctx.stroke();
       }
     }
 
     // ── Waveform trace — brighter glow inside airborne regions
-    ctx.shadowColor = 'rgba(240,168,0,0.5)';
+    ctx.shadowColor = glowColor;
     ctx.shadowBlur  = 5 * dpr;
-    ctx.strokeStyle = '#f0a800';
+    ctx.strokeStyle = traceColor;
     ctx.lineWidth   = 2 * dpr;
     ctx.lineJoin    = 'round';
     ctx.beginPath();
@@ -1151,8 +1263,8 @@ class Wave {
 
     // Second brighter pass over airborne regions
     ctx.shadowBlur  = 12 * dpr;
-    ctx.shadowColor = 'rgba(255,200,0,0.9)';
-    ctx.strokeStyle = '#ffe040';
+    ctx.shadowColor = brightGlow;
+    ctx.strokeStyle = brightColor;
     ctx.lineWidth   = 2.5 * dpr;
     for (const region of allRegions) {
       const rStart = Math.max(region.start, start);
@@ -1177,21 +1289,21 @@ class Wave {
       if (m.idx < start || m.idx >= end) continue;
       const x = ((m.idx - start) / (this._viewWidth - 1)) * W;
       // Vertical line
-      ctx.strokeStyle = 'rgba(240,200,64,0.6)';
+      ctx.strokeStyle = markerLine;
       ctx.lineWidth   = 1.5 * dpr;
       ctx.setLineDash([4 * dpr, 3 * dpr]);
       ctx.beginPath(); ctx.moveTo(x, PAD); ctx.lineTo(x, H - PAD); ctx.stroke();
       ctx.setLineDash([]);
       // Label
-      ctx.fillStyle = 'rgba(240,200,64,0.8)';
+      ctx.fillStyle = markerColor;
       ctx.fillText(m.label, x + 3 * dpr, PAD + 10 * dpr);
     }
 
     // ── Threshold labels
-    ctx.fillStyle = 'rgba(96,200,64,0.6)';
+    ctx.fillStyle = ffColor;
     ctx.font = `${8 * dpr}px Share Tech Mono`;
     ctx.fillText(`${this._ff}G`, 4 * dpr, ffy - 3 * dpr);
-    ctx.fillStyle = 'rgba(232,64,48,0.6)';
+    ctx.fillStyle = landColor;
     ctx.fillText(`${this._land}G`, 4 * dpr, ldy - 3 * dpr);
 
     // ── Scroll position indicator (mini scrollbar)
@@ -1584,6 +1696,19 @@ class App {
     URL.revokeObjectURL(url);
   }
 
+  toggleTheme() {
+    const sw   = document.body.classList.toggle('sw');
+    const icon = document.getElementById('themeIcon');
+    const lbl  = document.getElementById('themeLabel');
+    icon.textContent = sw ? '🌙' : '☀';
+    lbl.textContent  = sw ? 'GOLDEN' : 'SW MODE';
+    // Update waveform threshold colors
+    this._wave._swMode = sw;
+    this._wave._dirty  = true;
+    // Persist preference
+    localStorage.setItem('motoair-theme', sw ? 'sw' : 'golden');
+  }
+
   setBikeType(type) {
     this._bikeType = type;
 
@@ -1818,7 +1943,13 @@ class App {
   }
 }
 
-window.addEventListener('DOMContentLoaded', () => { window._app = new App(); });
+window.addEventListener('DOMContentLoaded', () => {
+  window._app = new App();
+  // Restore saved theme
+  if (localStorage.getItem('motoair-theme') === 'sw') {
+    window._app.toggleTheme();
+  }
+});
 </script>
 </body>
 </html>
