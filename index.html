@@ -239,6 +239,37 @@ body::after {
 }
 
 /* ── BIG AIRTIME DISPLAY ── */
+/* ── NIXIE ROW ── */
+.nixie-row {
+  display: flex;
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: inset 0 2px 6px rgba(0,0,0,0.5);
+  position: relative;
+}
+.nixie-panel {
+  flex: 1;
+  padding: 14px 16px;
+  position: relative;
+}
+.nixie-divider {
+  width: 1px;
+  background: var(--border2);
+  margin: 10px 0;
+}
+.nixie-sm {
+  font-size: 40px !important;
+}
+.nixie-dist {
+  color: var(--green) !important;
+  text-shadow:
+    0 0 8px rgba(168,200,32,0.85),
+    0 0 20px rgba(168,200,32,0.45),
+    0 0 40px rgba(168,200,32,0.22) !important;
+}
+
 .airtime-housing {
   background: var(--bg2);
   border: 1px solid var(--border2);
@@ -589,67 +620,25 @@ canvas#analogWave {
       </div>
     </div>
 
-    <!-- DISTANCE GAUGE — est. jump distance in feet -->
-    <div class="gauge-housing">
-      <div class="gauge-label">Est. Distance</div>
-      <div class="gauge-svg-wrap">
-        <svg viewBox="0 0 160 100" width="160" height="100">
-          <defs>
-            <filter id="glow2" x="-40%" y="-40%" width="180%" height="180%">
-              <feGaussianBlur stdDeviation="2" result="blur"/>
-              <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-            </filter>
-          </defs>
-          <path d="M 10 90 A 70 70 0 0 1 150 90" fill="url(#dialGrad)" stroke="#3a2e08" stroke-width="1.5"/>
-          <path d="M 6 90 A 74 74 0 0 1 154 90" fill="none" stroke="#5a4010" stroke-width="2"/>
-          <!-- Arc zones: 0-30ft green, 30-70ft amber, 70-100ft+ red -->
-          <path d="M 12 90 A 66 66 0 0 1 55 30" fill="none" stroke="#a8c820" stroke-width="5" stroke-linecap="butt" opacity="0.8"/>
-          <path d="M 55 30 A 66 66 0 0 1 105 30" fill="none" stroke="#f0a800" stroke-width="5" stroke-linecap="butt" opacity="0.8"/>
-          <path d="M 105 30 A 66 66 0 0 1 148 90" fill="none" stroke="#e84820" stroke-width="5" stroke-linecap="butt" opacity="0.8"/>
-          <!-- Major ticks at 0,20,40,60,80,100ft -->
-          <g stroke="#c8a820" stroke-width="1.5">
-            <line x1="80" y1="22" x2="80" y2="34" transform="rotate(-90 80 90)"/>
-            <line x1="80" y1="22" x2="80" y2="34" transform="rotate(-54 80 90)"/>
-            <line x1="80" y1="22" x2="80" y2="34" transform="rotate(-18 80 90)"/>
-            <line x1="80" y1="22" x2="80" y2="34" transform="rotate(18 80 90)"/>
-            <line x1="80" y1="22" x2="80" y2="34" transform="rotate(54 80 90)"/>
-            <line x1="80" y1="22" x2="80" y2="34" transform="rotate(90 80 90)"/>
-          </g>
-          <!-- Minor ticks -->
-          <g stroke="#7a5808" stroke-width="1">
-            <line x1="80" y1="26" x2="80" y2="34" transform="rotate(-72 80 90)"/>
-            <line x1="80" y1="26" x2="80" y2="34" transform="rotate(-36 80 90)"/>
-            <line x1="80" y1="26" x2="80" y2="34" transform="rotate(0 80 90)"/>
-            <line x1="80" y1="26" x2="80" y2="34" transform="rotate(36 80 90)"/>
-            <line x1="80" y1="26" x2="80" y2="34" transform="rotate(72 80 90)"/>
-          </g>
-          <!-- Labels in feet -->
-          <text x="10"  y="88" font-family="Share Tech Mono" font-size="8" fill="#c8a820" text-anchor="middle">0</text>
-          <text x="30"  y="48" font-family="Share Tech Mono" font-size="7" fill="#c8a820" text-anchor="middle">20</text>
-          <text x="80"  y="18" font-family="Share Tech Mono" font-size="7" fill="#c8a820" text-anchor="middle">50</text>
-          <text x="130" y="48" font-family="Share Tech Mono" font-size="7" fill="#c8a820" text-anchor="middle">80</text>
-          <text x="150" y="88" font-family="Share Tech Mono" font-size="8" fill="#c8a820" text-anchor="middle">100</text>
-          <!-- Needle: rests at -90 (0ft) -->
-          <g id="dNeedle" transform="rotate(-90 80 90)">
-            <polygon points="80,90 79,84 80,26 81,84" fill="#a8c820" filter="url(#glow2)"/>
-            <polygon points="80,90 78,97 80,100 82,97" fill="#506010"/>
-            <circle cx="80" cy="90" r="6" fill="#1c1600" stroke="#c8a820" stroke-width="1.5"/>
-            <circle cx="80" cy="90" r="2.5" fill="#c8e820"/>
-          </g>
-          <rect x="50" y="72" width="60" height="14" rx="2" fill="#080600" stroke="#3a2e08"/>
-          <text id="dText" x="80" y="83" text-anchor="middle" font-family="Share Tech Mono" font-size="9" fill="#f0c840">-- ft</text>
-        </svg>
-      </div>
-    </div>
   </div>
 
-  <!-- AIRTIME — NIXIE DISPLAY -->
-  <div class="airtime-housing">
-    <div class="screw tl"></div><div class="screw tr"></div>
-    <div class="screw bl"></div><div class="screw br"></div>
-    <div class="airtime-label">Airtime</div>
-    <div class="nixie" id="nixieTime">0.000<span class="unit">s</span></div>
-    <div class="airtime-sub" id="jumpCountSub">SESSION — 0 JUMPS</div>
+  <!-- NIXIE ROW — Airtime + Distance -->
+  <div class="nixie-row">
+    <div class="nixie-panel">
+      <div class="screw tl"></div><div class="screw tr"></div>
+      <div class="screw bl"></div><div class="screw br"></div>
+      <div class="airtime-label">Airtime</div>
+      <div class="nixie nixie-sm" id="nixieTime">0.000<span class="unit">s</span></div>
+      <div class="airtime-sub" id="jumpCountSub">0 JUMPS</div>
+    </div>
+    <div class="nixie-divider"></div>
+    <div class="nixie-panel">
+      <div class="screw tl"></div><div class="screw tr"></div>
+      <div class="screw bl"></div><div class="screw br"></div>
+      <div class="airtime-label">Est. Distance</div>
+      <div class="nixie nixie-sm nixie-dist" id="nixieDist">--<span class="unit">ft</span></div>
+      <div class="airtime-sub" id="distSub">GPS NEEDED</div>
+    </div>
   </div>
 
   <!-- STRIP CHART -->
@@ -822,7 +811,6 @@ function gToAngle(g) { return Math.min(90, Math.max(-90, (g/5)*180 - 90)); }
 function wToAngle(w) { return Math.min(90, Math.max(-90, (w/600)*180 - 90)); }
 
 // Distance gauge: -90deg = 0ft, +90deg = 100ft
-function dToAngle(ft) { return Math.min(90, Math.max(-90, (ft / 100) * 180 - 90)); }
 
 /* ── GPS Speed Tracker ── */
 class GpsTracker {
@@ -904,20 +892,16 @@ class App {
       setNeedle('gNeedle', gToAngle(this._filtMag));
       document.getElementById('gText').textContent = this._filtMag.toFixed(2)+'G';
 
-      // Distance needle — live estimate while airborne, holds on landing
+      // Distance nixie — live estimate while airborne, holds on landing
       if (this._fsm.state === FSM.S.AIR && this._fsm._t0 && this._takeoffSpeedMph !== null) {
-        const elapsedS  = (performance.now() - this._fsm._t0) / 1000;
-        const speedFps  = this._takeoffSpeedMph * 1.46667; // mph → ft/s
-        // Projectile arc correction: horizontal distance ≈ speed × time × 0.85
-        const estFt     = speedFps * elapsedS * 0.85;
+        const elapsedS = (performance.now() - this._fsm._t0) / 1000;
+        const speedFps = this._takeoffSpeedMph * 1.46667;
+        const estFt    = Math.round(speedFps * elapsedS * 0.85);
         this._lastDistFt = estFt;
-        setNeedle('dNeedle', dToAngle(estFt));
-        document.getElementById('dText').textContent = Math.round(estFt) + ' ft';
-      } else if (this._fsm.state !== FSM.S.AIR && this._lastDistFt > 0) {
-        // Hold needle at last jump distance when on ground
-        setNeedle('dNeedle', dToAngle(this._lastDistFt));
+        document.getElementById('nixieDist').innerHTML = estFt + '<span class="unit">ft</span>';
+        document.getElementById('distSub').textContent = 'IN FLIGHT';
       } else if (this._takeoffSpeedMph === null) {
-        document.getElementById('dText').textContent = 'NO GPS';
+        document.getElementById('distSub').textContent = 'GPS NEEDED';
       }
       document.getElementById('stripHz').textContent = this._lastHz + ' Hz';
 
@@ -1005,8 +989,8 @@ class App {
       const speedFps = this._takeoffSpeedMph * 1.46667;
       distFt = Math.round(speedFps * (e.airtimeMs / 1000) * 0.85);
       this._lastDistFt = distFt;
-      setNeedle('dNeedle', dToAngle(distFt));
-      document.getElementById('dText').textContent = distFt + ' ft';
+      document.getElementById('nixieDist').innerHTML = distFt + '<span class="unit">ft</span>';
+      document.getElementById('distSub').textContent = 'LAST JUMP';
     }
     // Attach distance to event (freeze a new object with it)
     const eventWithDist = Object.freeze({ ...e, distanceFt: distFt });
@@ -1100,8 +1084,8 @@ class App {
     document.getElementById('nixieTime').innerHTML = '0.000<span class="unit">s</span>';
     document.getElementById('jumpCountSub').textContent = 'SESSION — 0 JUMPS';
     this._lastDistFt = 0;
-    setNeedle('dNeedle', dToAngle(0));
-    document.getElementById('dText').textContent = '-- ft';
+    document.getElementById('nixieDist').innerHTML = '--<span class="unit">ft</span>';
+    document.getElementById('distSub').textContent = 'GPS NEEDED';
     const best = document.getElementById('bestAirtimeVal');
     best.textContent = '—'; best.classList.add('empty');
   }
