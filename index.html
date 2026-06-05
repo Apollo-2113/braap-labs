@@ -1234,6 +1234,8 @@ class App {
     gasBtn.classList.toggle('active',  type === 'gas');
     info.textContent  = p.label;
   }
+
+  _updateGpsBadge(status) {
     const badge = document.getElementById('gpsBadge');
     const dot   = document.getElementById('gpsDot');
     const label = document.getElementById('gpsLabel');
