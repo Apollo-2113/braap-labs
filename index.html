@@ -201,7 +201,7 @@ body::after {
 /* SVG GAUGE */
 .gauge-svg-wrap {
   position: relative;
-  width: 130px; height: 80px;
+  width: 160px; height: 100px;
   overflow: visible;
 }
 
@@ -481,47 +481,58 @@ canvas#analogWave {
     <div class="gauge-housing">
       <div class="gauge-label">G-Force</div>
       <div class="gauge-svg-wrap">
-        <svg viewBox="0 0 130 80" width="130" height="80" style="overflow:visible">
+        <svg viewBox="0 0 160 100" width="160" height="100">
           <defs>
             <radialGradient id="dialGrad" cx="50%" cy="100%" r="80%">
-              <stop offset="0%" stop-color="#141000"/>
-              <stop offset="100%" stop-color="#080600"/>
+              <stop offset="0%" stop-color="#1c1600"/>
+              <stop offset="100%" stop-color="#060400"/>
             </radialGradient>
-            <filter id="glow">
-              <feGaussianBlur stdDeviation="1.5" result="blur"/>
+            <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
+              <feGaussianBlur stdDeviation="2" result="blur"/>
               <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
             </filter>
           </defs>
-
-          <!-- Dial face -->
-          <path d="M 10 75 A 55 55 0 0 1 120 75" fill="url(#dialGrad)" stroke="#1e2530" stroke-width="1"/>
-
-          <!-- Tick marks -->
-          <g stroke="#2e3d50" stroke-width="1">
-            <!-- Major ticks at 0,1,2,3,4,5G -->
-            <line x1="65" y1="75" x2="65" y2="75" transform="rotate(-90,65,75) translate(0,-42)" />
+          <!-- Dial background -->
+          <path d="M 10 90 A 70 70 0 0 1 150 90" fill="url(#dialGrad)" stroke="#3a2e08" stroke-width="1.5"/>
+          <!-- Outer bezel -->
+          <path d="M 6 90 A 74 74 0 0 1 154 90" fill="none" stroke="#5a4010" stroke-width="2"/>
+          <!-- Arc zones: green 0-1.5G, amber 1.5-3G, red 3-5G -->
+          <path d="M 12 90 A 66 66 0 0 1 46 34" fill="none" stroke="#a8c820" stroke-width="5" stroke-linecap="butt" opacity="0.8"/>
+          <path d="M 46 34 A 66 66 0 0 1 114 34" fill="none" stroke="#f0a800" stroke-width="5" stroke-linecap="butt" opacity="0.8"/>
+          <path d="M 114 34 A 66 66 0 0 1 148 90" fill="none" stroke="#e84820" stroke-width="5" stroke-linecap="butt" opacity="0.8"/>
+          <!-- Major ticks -->
+          <g stroke="#c8a820" stroke-width="1.5">
+            <line x1="80" y1="22" x2="80" y2="34" transform="rotate(-90 80 90)"/>
+            <line x1="80" y1="22" x2="80" y2="34" transform="rotate(-54 80 90)"/>
+            <line x1="80" y1="22" x2="80" y2="34" transform="rotate(-18 80 90)"/>
+            <line x1="80" y1="22" x2="80" y2="34" transform="rotate(18 80 90)"/>
+            <line x1="80" y1="22" x2="80" y2="34" transform="rotate(54 80 90)"/>
+            <line x1="80" y1="22" x2="80" y2="34" transform="rotate(90 80 90)"/>
           </g>
-
-          <!-- Arc segments: green=normal, amber=warning, red=danger -->
-          <path d="M 15 75 A 50 50 0 0 1 46 32" fill="none" stroke="#40d880" stroke-width="4" stroke-linecap="round" opacity="0.5"/>
-          <path d="M 46 32 A 50 50 0 0 1 84 32" fill="none" stroke="#f0a800" stroke-width="4" stroke-linecap="round" opacity="0.5"/>
-          <path d="M 84 32 A 50 50 0 0 1 115 75" fill="none" stroke="#f0a800" stroke-width="4" stroke-linecap="round" opacity="0.5"/>
-
-          <!-- Scale labels -->
-          <text x="12" y="72" font-family="Share Tech Mono" font-size="7" fill="#7a5808">0</text>
-          <text x="31" y="40" font-family="Share Tech Mono" font-size="7" fill="#7a5808">1</text>
-          <text x="61" y="26" font-family="Share Tech Mono" font-size="7" fill="#7a5808">2</text>
-          <text x="91" y="34" font-family="Share Tech Mono" font-size="7" fill="#7a5808">3</text>
-          <text x="109" y="56" font-family="Share Tech Mono" font-size="7" fill="#7a5808">5</text>
-
-          <!-- Needle -->
-          <g id="gNeedle" transform="rotate(-90 65 75)">
-            <line x1="65" y1="75" x2="65" y2="28" stroke="#f0a800" stroke-width="1.5" stroke-linecap="round" filter="url(#glow)"/>
-            <circle cx="65" cy="75" r="4" fill="#0c0a00" stroke="#c8960a" stroke-width="1.5"/>
+          <!-- Minor ticks -->
+          <g stroke="#7a5808" stroke-width="1">
+            <line x1="80" y1="25" x2="80" y2="34" transform="rotate(-72 80 90)"/>
+            <line x1="80" y1="25" x2="80" y2="34" transform="rotate(-36 80 90)"/>
+            <line x1="80" y1="25" x2="80" y2="34" transform="rotate(0 80 90)"/>
+            <line x1="80" y1="25" x2="80" y2="34" transform="rotate(36 80 90)"/>
+            <line x1="80" y1="25" x2="80" y2="34" transform="rotate(72 80 90)"/>
           </g>
-
-          <!-- Digital readout -->
-          <text id="gText" x="65" y="68" text-anchor="middle" font-family="Share Tech Mono" font-size="10" fill="#f0c840">1.00G</text>
+          <!-- Labels -->
+          <text x="10" y="88" font-family="Share Tech Mono" font-size="8" fill="#c8a820" text-anchor="middle">0</text>
+          <text x="33" y="50" font-family="Share Tech Mono" font-size="8" fill="#c8a820" text-anchor="middle">1</text>
+          <text x="80" y="20" font-family="Share Tech Mono" font-size="8" fill="#c8a820" text-anchor="middle">2</text>
+          <text x="127" y="50" font-family="Share Tech Mono" font-size="8" fill="#c8a820" text-anchor="middle">3</text>
+          <text x="150" y="88" font-family="Share Tech Mono" font-size="8" fill="#c8a820" text-anchor="middle">5</text>
+          <!-- Needle: at rest points LEFT (0G = -90deg from top) -->
+          <g id="gNeedle" transform="rotate(-90 80 90)">
+            <polygon points="80,90 79,84 80,26 81,84" fill="#f0a800" filter="url(#glow)"/>
+            <polygon points="80,90 78,97 80,100 82,97" fill="#6a4808"/>
+            <circle cx="80" cy="90" r="6" fill="#1c1600" stroke="#c8a820" stroke-width="1.5"/>
+            <circle cx="80" cy="90" r="2.5" fill="#f0c840"/>
+          </g>
+          <!-- Readout -->
+          <rect x="56" y="72" width="48" height="14" rx="2" fill="#080600" stroke="#3a2e08"/>
+          <text id="gText" x="80" y="83" text-anchor="middle" font-family="Share Tech Mono" font-size="9" fill="#f0c840">1.00G</text>
         </svg>
       </div>
     </div>
@@ -530,28 +541,52 @@ canvas#analogWave {
     <div class="gauge-housing">
       <div class="gauge-label">Rotation °/s</div>
       <div class="gauge-svg-wrap">
-        <svg viewBox="0 0 130 80" width="130" height="80" style="overflow:visible">
+        <svg viewBox="0 0 160 100" width="160" height="100">
           <defs>
-            <filter id="glow2">
-              <feGaussianBlur stdDeviation="1.5" result="blur"/>
+            <filter id="glow2" x="-40%" y="-40%" width="180%" height="180%">
+              <feGaussianBlur stdDeviation="2" result="blur"/>
               <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
             </filter>
           </defs>
-          <path d="M 10 75 A 55 55 0 0 1 120 75" fill="url(#dialGrad)" stroke="#1e2530" stroke-width="1"/>
-
-          <!-- Arc -->
-          <path d="M 15 75 A 50 50 0 0 1 65 25" fill="none" stroke="#f0a800" stroke-width="4" stroke-linecap="round" opacity="0.4"/>
-          <path d="M 65 25 A 50 50 0 0 1 115 75" fill="none" stroke="#f0a800" stroke-width="4" stroke-linecap="round" opacity="0.4"/>
-
-          <text x="12"  y="72" font-family="Share Tech Mono" font-size="7" fill="#7a5808">0</text>
-          <text x="55"  y="22" font-family="Share Tech Mono" font-size="7" fill="#7a5808">300</text>
-          <text x="104" y="56" font-family="Share Tech Mono" font-size="7" fill="#7a5808">600</text>
-
-          <g id="rNeedle" transform="rotate(-90 65 75)">
-            <line x1="65" y1="75" x2="65" y2="28" stroke="#f0a800" stroke-width="1.5" stroke-linecap="round" filter="url(#glow2)"/>
-            <circle cx="65" cy="75" r="4" fill="#0c0a00" stroke="#c8960a" stroke-width="1.5"/>
+          <path d="M 10 90 A 70 70 0 0 1 150 90" fill="url(#dialGrad)" stroke="#3a2e08" stroke-width="1.5"/>
+          <path d="M 6 90 A 74 74 0 0 1 154 90" fill="none" stroke="#5a4010" stroke-width="2"/>
+          <!-- Arc zones: amber 0-300, red 300-600 -->
+          <path d="M 12 90 A 66 66 0 0 1 80 24" fill="none" stroke="#f0a800" stroke-width="5" stroke-linecap="butt" opacity="0.75"/>
+          <path d="M 80 24 A 66 66 0 0 1 148 90" fill="none" stroke="#e84820" stroke-width="5" stroke-linecap="butt" opacity="0.85"/>
+          <!-- Major ticks (0,100,200,300,400,500,600) -->
+          <g stroke="#c8a820" stroke-width="1.5">
+            <line x1="80" y1="22" x2="80" y2="34" transform="rotate(-90 80 90)"/>
+            <line x1="80" y1="22" x2="80" y2="34" transform="rotate(-60 80 90)"/>
+            <line x1="80" y1="22" x2="80" y2="34" transform="rotate(-30 80 90)"/>
+            <line x1="80" y1="22" x2="80" y2="34" transform="rotate(0 80 90)"/>
+            <line x1="80" y1="22" x2="80" y2="34" transform="rotate(30 80 90)"/>
+            <line x1="80" y1="22" x2="80" y2="34" transform="rotate(60 80 90)"/>
+            <line x1="80" y1="22" x2="80" y2="34" transform="rotate(90 80 90)"/>
           </g>
-          <text id="rText" x="65" y="68" text-anchor="middle" font-family="Share Tech Mono" font-size="10" fill="#f0c840">0°/s</text>
+          <!-- Minor ticks -->
+          <g stroke="#7a5808" stroke-width="1">
+            <line x1="80" y1="26" x2="80" y2="34" transform="rotate(-75 80 90)"/>
+            <line x1="80" y1="26" x2="80" y2="34" transform="rotate(-45 80 90)"/>
+            <line x1="80" y1="26" x2="80" y2="34" transform="rotate(-15 80 90)"/>
+            <line x1="80" y1="26" x2="80" y2="34" transform="rotate(15 80 90)"/>
+            <line x1="80" y1="26" x2="80" y2="34" transform="rotate(45 80 90)"/>
+            <line x1="80" y1="26" x2="80" y2="34" transform="rotate(75 80 90)"/>
+          </g>
+          <!-- Labels -->
+          <text x="10"  y="88" font-family="Share Tech Mono" font-size="8" fill="#c8a820" text-anchor="middle">0</text>
+          <text x="28"  y="48" font-family="Share Tech Mono" font-size="7" fill="#c8a820" text-anchor="middle">200</text>
+          <text x="80"  y="18" font-family="Share Tech Mono" font-size="7" fill="#c8a820" text-anchor="middle">300</text>
+          <text x="132" y="48" font-family="Share Tech Mono" font-size="7" fill="#c8a820" text-anchor="middle">500</text>
+          <text x="150" y="88" font-family="Share Tech Mono" font-size="8" fill="#c8a820" text-anchor="middle">600</text>
+          <!-- Needle: at rest points LEFT (0°/s = -90deg) -->
+          <g id="rNeedle" transform="rotate(-90 80 90)">
+            <polygon points="80,90 79,84 80,26 81,84" fill="#e84820" filter="url(#glow2)"/>
+            <polygon points="80,90 78,97 80,100 82,97" fill="#6a2808"/>
+            <circle cx="80" cy="90" r="6" fill="#1c1600" stroke="#c8a820" stroke-width="1.5"/>
+            <circle cx="80" cy="90" r="2.5" fill="#e84820"/>
+          </g>
+          <rect x="56" y="72" width="48" height="14" rx="2" fill="#080600" stroke="#3a2e08"/>
+          <text id="rText" x="80" y="83" text-anchor="middle" font-family="Share Tech Mono" font-size="9" fill="#f0c840">0°/s</text>
         </svg>
       </div>
     </div>
@@ -722,10 +757,13 @@ class Sim {
 }
 
 /* ── Needle animation ── */
-// Uses SVG native transform — works correctly on iOS Safari
-// Pivot point is (65, 75) matching needle geometry
+// SVG native transform — pivot at (80,90) matches needle geometry
+// G gauge: -90deg = 0G (points left), +90deg = 5G (points right)
+function gToAngle(g) { return Math.min(90, Math.max(-90, (g / 5) * 180 - 90)); }
+// Rotation: -90deg = 0°/s, +90deg = 600°/s
+function wToAngle(w) { return Math.min(90, Math.max(-90, (w / 600) * 180 - 90)); }
 function setNeedle(id, angleDeg) {
-  document.getElementById(id).setAttribute('transform', `rotate(${angleDeg} 65 75)`);
+  document.getElementById(id).setAttribute('transform', `rotate(${angleDeg} 80 90)`);
 }
 // G gauge: -90deg = 0G, 0deg = 2.5G, +90deg = 5G
 function gToAngle(g) { return Math.min(90, Math.max(-90, (g/5)*180 - 90)); }
