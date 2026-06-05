@@ -566,7 +566,6 @@
 <body>
 
 <div class="impact-overlay" id="impactOverlay"></div>
-<div class="airborne-banner" id="airborneBanner">⬆ AIRBORNE</div>
 
 <!-- ═══════════════════════════════════════════════════════════
      HEADER
@@ -593,15 +592,6 @@
      APP SHELL
 ═══════════════════════════════════════════════════════════ -->
 <div class="app-shell">
-
-  <!-- DEMO CALLOUT -->
-  <div class="demo-callout" id="permissionNote">
-    <strong>📡 SENSOR ACCESS REQUIRED</strong> — This POC uses the real
-    <code>DeviceMotionEvent</code> API (accelerometer + gyroscope).
-    On iOS 13+, tap <strong>ENABLE SENSORS</strong> to grant permission.
-    Android/Chrome grants automatically on HTTPS. For desktop demo, use
-    <strong>SIMULATE RIDE</strong> to inject synthetic jump data.
-  </div>
 
   <!-- STATE MACHINE RAIL -->
   <div class="state-rail">
@@ -665,7 +655,6 @@
   <div class="panel">
     <div class="panel-header">
       <div class="panel-title">Signal Processing Config</div>
-      <span class="tag">ADJUSTABLE — matches production mobile params</span>
     </div>
     <div class="config-grid">
       <div class="config-item">
@@ -713,29 +702,6 @@
     </div>
   </div>
 
-  <!-- ARCHITECTURE NOTE -->
-  <div class="panel">
-    <div class="panel-header">
-      <div class="panel-title">Architecture / Signal Pipeline</div>
-    </div>
-    <div style="padding:16px; font-family: var(--font-mono); font-size:11px; color: var(--text-secondary); line-height:2">
-      <span style="color:var(--accent-ice)">RAW SENSOR</span>
-      &nbsp;→&nbsp;
-      <span style="color:var(--accent-amber)">EUCLIDEAN MAGNITUDE √(ax²+ay²+az²)</span>
-      &nbsp;→&nbsp;
-      <span style="color:var(--accent-amber)">LPF (EMA α)</span>
-      &nbsp;→&nbsp;
-      <span style="color:var(--accent-lime)">STATE MACHINE</span>
-      &nbsp;→&nbsp;
-      <span style="color:var(--accent-hot)">JUMP EVENT</span>
-      <br>
-      <span style="color:var(--text-dim)">
-        Gyroscope stream is processed in parallel → magnitude √(gx²+gy²+gz²) → peak tracked per-jump.<br>
-        Orientation-agnostic: works regardless of phone placement in pocket (portrait/landscape/inverted).<br>
-        On mobile: DeviceMotionEvent @ ~60Hz. Production iOS: CMMotionManager @ 100Hz. Android: TYPE_LINEAR_ACCELERATION + TYPE_GYROSCOPE.
-      </span>
-    </div>
-  </div>
 
 </div><!-- /app-shell -->
 
@@ -1416,8 +1382,6 @@ class App {
       gyroDot:       document.getElementById('gyroDot'),
       sessionDot:    document.getElementById('sessionDot'),
       impactOverlay: document.getElementById('impactOverlay'),
-      airborneBanner:document.getElementById('airborneBanner'),
-      permissionNote:document.getElementById('permissionNote'),
     };
 
     // Track UI update throttling (draw at 30fps max)
@@ -1484,17 +1448,11 @@ class App {
     this._updateStateUI(newState);
 
     if (newState === JumpStateMachine.State.AIRBORNE_FREEFALL) {
-      this._ui.airborneBanner.classList.add('visible');
       this._ui.metricGyro.textContent = '0';
     }
 
     if (newState === JumpStateMachine.State.LANDING_IMPACT) {
-      this._ui.airborneBanner.classList.remove('visible');
       this._flashImpact();
-    }
-
-    if (newState === JumpStateMachine.State.GROUND_RIDING) {
-      this._ui.airborneBanner.classList.remove('visible');
     }
   }
 
@@ -1519,7 +1477,6 @@ class App {
       await this._session.start();
       this._mode = 'real';
       this._setSessionActive(true, 'LIVE');
-      this._ui.permissionNote.style.display = 'none';
     } catch(e) {
       alert('Sensor error: ' + e.message + '\n\nTry the Simulate Ride button instead.');
     }
@@ -1530,7 +1487,6 @@ class App {
     this._sim.start();
     this._mode = 'sim';
     this._setSessionActive(true, 'SIMULATING');
-    this._ui.permissionNote.style.display = 'none';
   }
 
   _stop() {
