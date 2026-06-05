@@ -584,9 +584,9 @@ canvas#analogWave {
       </div>
     </div>
 
-    <!-- ROTATION GAUGE -->
+    <!-- DISTANCE GAUGE — est. jump distance in feet -->
     <div class="gauge-housing">
-      <div class="gauge-label">Rotation °/s</div>
+      <div class="gauge-label">Est. Distance</div>
       <div class="gauge-svg-wrap">
         <svg viewBox="0 0 160 100" width="160" height="100">
           <defs>
@@ -597,43 +597,42 @@ canvas#analogWave {
           </defs>
           <path d="M 10 90 A 70 70 0 0 1 150 90" fill="url(#dialGrad)" stroke="#3a2e08" stroke-width="1.5"/>
           <path d="M 6 90 A 74 74 0 0 1 154 90" fill="none" stroke="#5a4010" stroke-width="2"/>
-          <!-- Arc zones: amber 0-300, red 300-600 -->
-          <path d="M 12 90 A 66 66 0 0 1 80 24" fill="none" stroke="#f0a800" stroke-width="5" stroke-linecap="butt" opacity="0.75"/>
-          <path d="M 80 24 A 66 66 0 0 1 148 90" fill="none" stroke="#e84820" stroke-width="5" stroke-linecap="butt" opacity="0.85"/>
-          <!-- Major ticks (0,100,200,300,400,500,600) -->
+          <!-- Arc zones: 0-30ft green, 30-70ft amber, 70-100ft+ red -->
+          <path d="M 12 90 A 66 66 0 0 1 55 30" fill="none" stroke="#a8c820" stroke-width="5" stroke-linecap="butt" opacity="0.8"/>
+          <path d="M 55 30 A 66 66 0 0 1 105 30" fill="none" stroke="#f0a800" stroke-width="5" stroke-linecap="butt" opacity="0.8"/>
+          <path d="M 105 30 A 66 66 0 0 1 148 90" fill="none" stroke="#e84820" stroke-width="5" stroke-linecap="butt" opacity="0.8"/>
+          <!-- Major ticks at 0,20,40,60,80,100ft -->
           <g stroke="#c8a820" stroke-width="1.5">
             <line x1="80" y1="22" x2="80" y2="34" transform="rotate(-90 80 90)"/>
-            <line x1="80" y1="22" x2="80" y2="34" transform="rotate(-60 80 90)"/>
-            <line x1="80" y1="22" x2="80" y2="34" transform="rotate(-30 80 90)"/>
-            <line x1="80" y1="22" x2="80" y2="34" transform="rotate(0 80 90)"/>
-            <line x1="80" y1="22" x2="80" y2="34" transform="rotate(30 80 90)"/>
-            <line x1="80" y1="22" x2="80" y2="34" transform="rotate(60 80 90)"/>
+            <line x1="80" y1="22" x2="80" y2="34" transform="rotate(-54 80 90)"/>
+            <line x1="80" y1="22" x2="80" y2="34" transform="rotate(-18 80 90)"/>
+            <line x1="80" y1="22" x2="80" y2="34" transform="rotate(18 80 90)"/>
+            <line x1="80" y1="22" x2="80" y2="34" transform="rotate(54 80 90)"/>
             <line x1="80" y1="22" x2="80" y2="34" transform="rotate(90 80 90)"/>
           </g>
           <!-- Minor ticks -->
           <g stroke="#7a5808" stroke-width="1">
-            <line x1="80" y1="26" x2="80" y2="34" transform="rotate(-75 80 90)"/>
-            <line x1="80" y1="26" x2="80" y2="34" transform="rotate(-45 80 90)"/>
-            <line x1="80" y1="26" x2="80" y2="34" transform="rotate(-15 80 90)"/>
-            <line x1="80" y1="26" x2="80" y2="34" transform="rotate(15 80 90)"/>
-            <line x1="80" y1="26" x2="80" y2="34" transform="rotate(45 80 90)"/>
-            <line x1="80" y1="26" x2="80" y2="34" transform="rotate(75 80 90)"/>
+            <line x1="80" y1="26" x2="80" y2="34" transform="rotate(-72 80 90)"/>
+            <line x1="80" y1="26" x2="80" y2="34" transform="rotate(-36 80 90)"/>
+            <line x1="80" y1="26" x2="80" y2="34" transform="rotate(0 80 90)"/>
+            <line x1="80" y1="26" x2="80" y2="34" transform="rotate(36 80 90)"/>
+            <line x1="80" y1="26" x2="80" y2="34" transform="rotate(72 80 90)"/>
           </g>
-          <!-- Labels -->
+          <!-- Labels in feet -->
           <text x="10"  y="88" font-family="Share Tech Mono" font-size="8" fill="#c8a820" text-anchor="middle">0</text>
-          <text x="28"  y="48" font-family="Share Tech Mono" font-size="7" fill="#c8a820" text-anchor="middle">200</text>
-          <text x="80"  y="18" font-family="Share Tech Mono" font-size="7" fill="#c8a820" text-anchor="middle">300</text>
-          <text x="132" y="48" font-family="Share Tech Mono" font-size="7" fill="#c8a820" text-anchor="middle">500</text>
-          <text x="150" y="88" font-family="Share Tech Mono" font-size="8" fill="#c8a820" text-anchor="middle">600</text>
-          <!-- Needle: at rest points LEFT (0°/s = -90deg) -->
-          <g id="rNeedle" transform="rotate(-90 80 90)">
-            <polygon points="80,90 79,84 80,26 81,84" fill="#e84820" filter="url(#glow2)"/>
-            <polygon points="80,90 78,97 80,100 82,97" fill="#6a2808"/>
+          <text x="30"  y="48" font-family="Share Tech Mono" font-size="7" fill="#c8a820" text-anchor="middle">20</text>
+          <text x="80"  y="18" font-family="Share Tech Mono" font-size="7" fill="#c8a820" text-anchor="middle">50</text>
+          <text x="130" y="48" font-family="Share Tech Mono" font-size="7" fill="#c8a820" text-anchor="middle">80</text>
+          <text x="150" y="88" font-family="Share Tech Mono" font-size="8" fill="#c8a820" text-anchor="middle">100</text>
+          <!-- Needle: rests at -90 (0ft) -->
+          <g id="dNeedle" transform="rotate(-90 80 90)">
+            <polygon points="80,90 79,84 80,26 81,84" fill="#a8c820" filter="url(#glow2)"/>
+            <polygon points="80,90 78,97 80,100 82,97" fill="#506010"/>
             <circle cx="80" cy="90" r="6" fill="#1c1600" stroke="#c8a820" stroke-width="1.5"/>
-            <circle cx="80" cy="90" r="2.5" fill="#e84820"/>
+            <circle cx="80" cy="90" r="2.5" fill="#c8e820"/>
           </g>
-          <rect x="56" y="72" width="48" height="14" rx="2" fill="#080600" stroke="#3a2e08"/>
-          <text id="rText" x="80" y="83" text-anchor="middle" font-family="Share Tech Mono" font-size="9" fill="#f0c840">0°/s</text>
+          <rect x="50" y="72" width="60" height="14" rx="2" fill="#080600" stroke="#3a2e08"/>
+          <text id="dText" x="80" y="83" text-anchor="middle" font-family="Share Tech Mono" font-size="9" fill="#f0c840">-- ft</text>
         </svg>
       </div>
     </div>
@@ -817,6 +816,35 @@ function gToAngle(g) { return Math.min(90, Math.max(-90, (g/5)*180 - 90)); }
 // Rotation gauge: -90 = 0, +90 = 600
 function wToAngle(w) { return Math.min(90, Math.max(-90, (w/600)*180 - 90)); }
 
+// Distance gauge: -90deg = 0ft, +90deg = 100ft
+function dToAngle(ft) { return Math.min(90, Math.max(-90, (ft / 100) * 180 - 90)); }
+
+/* ── GPS Speed Tracker ── */
+class GpsTracker {
+  constructor() {
+    this._speed  = null; // current speed in mph
+    this._watchId = null;
+  }
+  start() {
+    if (!navigator.geolocation) return;
+    this._watchId = navigator.geolocation.watchPosition(
+      pos => {
+        if (pos.coords.speed !== null && pos.coords.speed >= 0)
+          this._speed = pos.coords.speed * 2.23694; // m/s → mph
+        else
+          this._speed = 0;
+      },
+      () => { this._speed = null; },
+      { enableHighAccuracy: true, maximumAge: 500, timeout: 10000 }
+    );
+  }
+  stop() {
+    if (this._watchId !== null) navigator.geolocation.clearWatch(this._watchId);
+    this._speed = null;
+  }
+  snapshot() { return this._speed; } // call at takeoff moment
+}
+
 /* ── App ── */
 class App {
   constructor() {
@@ -831,6 +859,9 @@ class App {
       s => this._onState(s)
     );
     this._session = null; this._sim = null;
+    this._gps = new GpsTracker();
+    this._takeoffSpeedMph = null;  // GPS speed snapshotted at takeoff
+    this._lastDistFt = 0;          // last jump distance for needle hold
 
     document.getElementById('btnEnable').addEventListener('click', () => this._startReal());
     document.getElementById('btnSim').addEventListener('click',    () => this._startSim());
@@ -859,9 +890,22 @@ class App {
       // Update G needle
       setNeedle('gNeedle', gToAngle(this._filtMag));
       document.getElementById('gText').textContent = this._filtMag.toFixed(2)+'G';
-      // Update rotation needle
-      setNeedle('rNeedle', wToAngle(gyroMag));
-      document.getElementById('rText').textContent = Math.round(gyroMag)+'°/s';
+
+      // Distance needle — live estimate while airborne, holds on landing
+      if (this._fsm.state === FSM.S.AIR && this._fsm._t0 && this._takeoffSpeedMph !== null) {
+        const elapsedS  = (performance.now() - this._fsm._t0) / 1000;
+        const speedFps  = this._takeoffSpeedMph * 1.46667; // mph → ft/s
+        // Projectile arc correction: horizontal distance ≈ speed × time × 0.85
+        const estFt     = speedFps * elapsedS * 0.85;
+        this._lastDistFt = estFt;
+        setNeedle('dNeedle', dToAngle(estFt));
+        document.getElementById('dText').textContent = Math.round(estFt) + ' ft';
+      } else if (this._fsm.state !== FSM.S.AIR && this._lastDistFt > 0) {
+        // Hold needle at last jump distance when on ground
+        setNeedle('dNeedle', dToAngle(this._lastDistFt));
+      } else if (this._takeoffSpeedMph === null) {
+        document.getElementById('dText').textContent = 'NO GPS';
+      }
       document.getElementById('stripHz').textContent = this._lastHz + ' Hz';
 
       if (this._fsm.state === FSM.S.AIR && this._fsm._t0) {
@@ -872,7 +916,7 @@ class App {
   }
 
   _onState(s) {
-    // Flash impact overlay on landing
+    if (s === FSM.S.AIR)  this._takeoffSpeedMph = this._gps.snapshot();
     if (s === FSM.S.LAND) this._flashImpact();
   }
 
@@ -911,7 +955,18 @@ class App {
   }
 
   _onJump(e) {
-    this._jumps.unshift(e);
+    // Calculate final distance using takeoff speed × airtime
+    let distFt = null;
+    if (this._takeoffSpeedMph !== null) {
+      const speedFps = this._takeoffSpeedMph * 1.46667;
+      distFt = Math.round(speedFps * (e.airtimeMs / 1000) * 0.85);
+      this._lastDistFt = distFt;
+      setNeedle('dNeedle', dToAngle(distFt));
+      document.getElementById('dText').textContent = distFt + ' ft';
+    }
+    // Attach distance to event (freeze a new object with it)
+    const eventWithDist = Object.freeze({ ...e, distanceFt: distFt });
+    this._jumps.unshift(eventWithDist);
     document.getElementById('nixieTime').innerHTML = (e.airtimeMs/1000).toFixed(3)+'<span class="unit">s</span>';
     document.getElementById('jumpCountSub').textContent = `SESSION — ${e.id} JUMP${e.id!==1?'S':''}`;
     document.getElementById('logCount').textContent = e.id + ' JUMP' + (e.id!==1?'S':'');
@@ -947,14 +1002,14 @@ class App {
           <div class="le-delta">${d(e.airtimeMs, prev?.airtimeMs, true)}</div>
         </div>
         <div class="le-stat">
+          <div class="le-val" style="color:var(--green)">${e.distanceFt !== null ? e.distanceFt+'ft' : '--'}</div>
+          <div class="le-lbl">distance</div>
+          <div class="le-delta">${e.distanceFt !== null ? d(e.distanceFt, prev?.distanceFt, true) : ''}</div>
+        </div>
+        <div class="le-stat">
           <div class="le-val" style="color:var(--red)">${e.impactG.toFixed(1)}G</div>
           <div class="le-lbl">impact</div>
           <div class="le-delta">${d(e.impactG, prev?.impactG, false)}</div>
-        </div>
-        <div class="le-stat">
-          <div class="le-val" style="color:var(--white-dim)">${e.peakW}°/s</div>
-          <div class="le-lbl">rotation</div>
-          <div class="le-delta">${d(e.peakW, prev?.peakW, true)}</div>
         </div>
         <div class="le-badge">${e.airtimeMs===bestMs&&this._jumps.length>1?'★ BEST':''}</div>
       `;
@@ -973,6 +1028,7 @@ class App {
         this._frame({ax:a.x??0,ay:a.y??0,az:a.z??0,gx:r?.alpha??0,gy:r?.beta??0,gz:r?.gamma??0,timestamp:performance.now()});
       };
       window.addEventListener('devicemotion', this._motionCb, {passive:true});
+      this._gps.start();
       this._setSessionActive(true);
     } catch(e) { alert('Sensor error: '+e.message); }
   }
@@ -980,12 +1036,16 @@ class App {
   _startSim() {
     this._sim = new Sim(f => this._frame(f));
     this._sim.start();
+    // Inject a fake GPS speed for simulation (25 mph typical MX approach speed)
+    this._takeoffSpeedMph = 25;
     this._setSessionActive(true);
   }
 
   _stop() {
     if (this._motionCb) { window.removeEventListener('devicemotion',this._motionCb); this._motionCb=null; }
     if (this._sim) { this._sim.stop(); this._sim=null; }
+    this._gps.stop();
+    this._takeoffSpeedMph = null;
     this._setSessionActive(false);
   }
 
@@ -995,7 +1055,9 @@ class App {
     document.getElementById('emptyLog').style.display = '';
     document.getElementById('nixieTime').innerHTML = '0.000<span class="unit">s</span>';
     document.getElementById('jumpCountSub').textContent = 'SESSION — 0 JUMPS';
-    document.getElementById('logCount').textContent = '0 JUMPS';
+    this._lastDistFt = 0;
+    setNeedle('dNeedle', dToAngle(0));
+    document.getElementById('dText').textContent = '-- ft';
     const best = document.getElementById('bestAirtimeVal');
     best.textContent = '—'; best.classList.add('empty');
   }
