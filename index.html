@@ -935,6 +935,9 @@ class Wave {
 
     // Jump markers [{sampleIdx, label}]
     this._markers = [];
+    // Airborne regions [{start, end, label}]
+    this._airRegions = [];
+    this._currentAirStart = null;
 
     this._ff   = 0.80;
     this._land = 1.5;
@@ -956,6 +959,19 @@ class Wave {
     this._total++;
     if (this._live) this._scrollPos = Math.max(0, this._total - this._viewWidth);
     this._dirty = true;
+  }
+
+  // Call when bike goes airborne
+  markAirStart() {
+    this._currentAirStart = this._total;
+  }
+
+  // Call when bike lands — closes the region
+  markAirEnd(jumpLabel) {
+    if (this._currentAirStart === null) return;
+    this._airRegions.push({ start: this._currentAirStart, end: this._total, label: jumpLabel });
+    if (this._airRegions.length > 50) this._airRegions.shift();
+    this._currentAirStart = null;
   }
 
   // Call when a jump lands to place a marker on the waveform
@@ -1081,7 +1097,38 @@ class Wave {
     const len   = Math.min(end, this._total) - start;
     if (len < 2) return;
 
-    // ── Waveform trace
+    // ── Airborne regions — glowing amber fill
+    const allRegions = [...this._airRegions];
+    // Add current in-flight region if airborne right now
+    if (this._currentAirStart !== null) {
+      allRegions.push({ start: this._currentAirStart, end: this._total, label: null });
+    }
+    for (const region of allRegions) {
+      const rStart = Math.max(region.start, start);
+      const rEnd   = Math.min(region.end,   end);
+      if (rEnd <= rStart) continue;
+      const x1 = ((rStart - start) / (this._viewWidth - 1)) * W;
+      const x2 = ((rEnd   - start) / (this._viewWidth - 1)) * W;
+      // Background fill — warm amber glow
+      const grad = ctx.createLinearGradient(0, PAD, 0, H - PAD);
+      grad.addColorStop(0,   'rgba(240,168,0,0.18)');
+      grad.addColorStop(0.5, 'rgba(240,168,0,0.08)');
+      grad.addColorStop(1,   'rgba(240,168,0,0.02)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(x1, PAD, x2 - x1, DH);
+      // Left edge line (takeoff)
+      ctx.strokeStyle = 'rgba(168,200,32,0.7)';
+      ctx.lineWidth   = 1.5 * dpr;
+      ctx.setLineDash([]);
+      ctx.beginPath(); ctx.moveTo(x1, PAD); ctx.lineTo(x1, H - PAD); ctx.stroke();
+      // Right edge line (landing) — only if completed
+      if (region.label) {
+        ctx.strokeStyle = 'rgba(232,100,32,0.7)';
+        ctx.beginPath(); ctx.moveTo(x2, PAD); ctx.lineTo(x2, H - PAD); ctx.stroke();
+      }
+    }
+
+    // ── Waveform trace — brighter glow inside airborne regions
     ctx.shadowColor = 'rgba(240,168,0,0.5)';
     ctx.shadowBlur  = 5 * dpr;
     ctx.strokeStyle = '#f0a800';
@@ -1096,6 +1143,27 @@ class Wave {
       i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
     }
     ctx.stroke();
+
+    // Second brighter pass over airborne regions
+    ctx.shadowBlur  = 12 * dpr;
+    ctx.shadowColor = 'rgba(255,200,0,0.9)';
+    ctx.strokeStyle = '#ffe040';
+    ctx.lineWidth   = 2.5 * dpr;
+    for (const region of allRegions) {
+      const rStart = Math.max(region.start, start);
+      const rEnd   = Math.min(region.end,   end);
+      if (rEnd <= rStart) continue;
+      ctx.beginPath();
+      for (let i = rStart - start; i <= rEnd - start && i < len; i++) {
+        if (i < 0) continue;
+        const sampleIdx = (start + i) % this._HIST;
+        const v = this._hist[(sampleIdx + this._HIST) % this._HIST];
+        const x = (i / (this._viewWidth - 1)) * W;
+        const y = PAD + DH - Math.min(v * ys, DH);
+        i === rStart - start ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    }
     ctx.shadowBlur = 0;
 
     // ── Jump markers
@@ -1416,6 +1484,7 @@ class App {
     if (s === FSM.S.AIR) {
       this._takeoffGpsState = this._gps.snapshotState();
       this._takeoffSpeedMph = this._takeoffGpsState.speed;
+      this._wave.markAirStart();
     }
     if (s === FSM.S.LAND) this._flashImpact();
   }
@@ -1612,7 +1681,8 @@ class App {
     document.getElementById('logCount').textContent = e.id + ' JUMP' + (e.id!==1?'S':'');
     this._updateBestAirtime();
     this._renderLog();
-    // Mark jump position on waveform
+    // Mark jump on waveform — close the airborne region with label
+    this._wave.markAirEnd(`#${eventWithDist.id}`);
     this._wave.markJump(`#${eventWithDist.id}`);
   }
 
@@ -1705,6 +1775,8 @@ class App {
   _clear() {
     this._jumps = []; this._fsm._count = 0;
     this._wave._markers = [];
+    this._wave._airRegions = [];
+    this._wave._currentAirStart = null;
     this._wave._head = 0; this._wave._total = 0; this._wave._scrollPos = 0;
     document.getElementById('logEntries').innerHTML = '';
     document.getElementById('emptyLog').style.display = '';
