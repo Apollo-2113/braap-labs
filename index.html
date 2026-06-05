@@ -1473,10 +1473,12 @@ class App {
       }
       document.getElementById('stripHz').textContent = this._lastHz + ' Hz';
 
+      // Airtime — only count up while airborne, hold last jump value otherwise
       if (this._fsm.state === FSM.S.AIR && this._fsm._t0) {
-        const el = (performance.now() - this._fsm._t0) / 1000;
-        document.getElementById('nixieTime').innerHTML = el.toFixed(3) + '<span class="unit">s</span>';
+        const elapsed = (performance.now() - this._fsm._t0) / 1000;
+        document.getElementById('nixieTime').innerHTML = elapsed.toFixed(3) + '<span class="unit">s</span>';
       }
+      // Note: after landing, _onJump sets the final airtime — we don't touch it here
     }
   }
 
@@ -1486,7 +1488,10 @@ class App {
       this._takeoffSpeedMph = this._takeoffGpsState.speed;
       this._wave.markAirStart();
     }
-    if (s === FSM.S.LAND) this._flashImpact();
+    if (s === FSM.S.LAND) {
+      this._fsm._t0 = null; // freeze airtime counter immediately
+      this._flashImpact();
+    }
   }
 
   _flashImpact() {
