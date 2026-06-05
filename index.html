@@ -1128,10 +1128,9 @@ class App {
       s => this._onState(s)
     );
     this._session = null; this._sim = null;
-    this._bikeType = 'electric';
-    this.setBikeType('electric'); // apply defaults on load
-    this._takeoffGpsState  = null;  // { speed, coords } snapshotted at takeoff
-    this._takeoffSpeedMph  = null;  // quick access to speed for sim
+    this._gps = new GpsTracker(status => this._updateGpsBadge(status));
+    this._takeoffGpsState  = null;
+    this._takeoffSpeedMph  = null;
     this._lastDistFt       = 0;
 
     document.getElementById('btnEnable').addEventListener('click', () => this._startReal());
@@ -1140,6 +1139,10 @@ class App {
     document.getElementById('btnClear').addEventListener('click',  () => this._clear());
 
     this._lastUi = 0;
+
+    // Apply default bike preset last — after all state is initialized
+    this._bikeType = 'electric';
+    this.setBikeType('electric');
   }
 
   _frame(f) {
