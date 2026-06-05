@@ -515,9 +515,9 @@ canvas#analogWave {
           <text x="109" y="56" font-family="Share Tech Mono" font-size="7" fill="#7a5808">5</text>
 
           <!-- Needle -->
-          <g id="gNeedle" style="transform-origin: 65px 75px; transform: rotate(-90deg);">
+          <g id="gNeedle" transform="rotate(-90 65 75)">
             <line x1="65" y1="75" x2="65" y2="28" stroke="#f0a800" stroke-width="1.5" stroke-linecap="round" filter="url(#glow)"/>
-            <circle cx="65" cy="75" r="4" fill="#0c0a00" stroke="#a0b8cc" stroke-width="1.5"/>
+            <circle cx="65" cy="75" r="4" fill="#0c0a00" stroke="#c8960a" stroke-width="1.5"/>
           </g>
 
           <!-- Digital readout -->
@@ -547,9 +547,9 @@ canvas#analogWave {
           <text x="55"  y="22" font-family="Share Tech Mono" font-size="7" fill="#7a5808">300</text>
           <text x="104" y="56" font-family="Share Tech Mono" font-size="7" fill="#7a5808">600</text>
 
-          <g id="rNeedle" style="transform-origin: 65px 75px; transform: rotate(-90deg);">
+          <g id="rNeedle" transform="rotate(-90 65 75)">
             <line x1="65" y1="75" x2="65" y2="28" stroke="#f0a800" stroke-width="1.5" stroke-linecap="round" filter="url(#glow2)"/>
-            <circle cx="65" cy="75" r="4" fill="#0c0a00" stroke="#a0b8cc" stroke-width="1.5"/>
+            <circle cx="65" cy="75" r="4" fill="#0c0a00" stroke="#c8960a" stroke-width="1.5"/>
           </g>
           <text id="rText" x="65" y="68" text-anchor="middle" font-family="Share Tech Mono" font-size="10" fill="#f0c840">0°/s</text>
         </svg>
@@ -722,8 +722,10 @@ class Sim {
 }
 
 /* ── Needle animation ── */
+// Uses SVG native transform — works correctly on iOS Safari
+// Pivot point is (65, 75) matching needle geometry
 function setNeedle(id, angleDeg) {
-  document.getElementById(id).style.transform = `rotate(${angleDeg}deg)`;
+  document.getElementById(id).setAttribute('transform', `rotate(${angleDeg} 65 75)`);
 }
 // G gauge: -90deg = 0G, 0deg = 2.5G, +90deg = 5G
 function gToAngle(g) { return Math.min(90, Math.max(-90, (g/5)*180 - 90)); }
