@@ -1134,6 +1134,7 @@ class App {
     this._takeoffGpsState  = null;
     this._takeoffSpeedMph  = null;
     this._lastDistFt       = 0;
+    this._arcFactor        = 0.50; // distance correction — tuned per bike type
 
     document.getElementById('btnEnable').addEventListener('click', () => this._startReal());
     document.getElementById('btnSim').addEventListener('click',    () => this._startSim());
@@ -1183,14 +1184,14 @@ class App {
       if (this._fsm.state === FSM.S.AIR && this._fsm._t0 && tState && tState.speed !== null) {
         const elapsedS = (performance.now() - this._fsm._t0) / 1000;
         const speedFps = tState.speed * 1.46667;
-        const estFt    = Math.round(speedFps * elapsedS * 0.85);
+        const estFt    = Math.round(speedFps * elapsedS * this._arcFactor);
         this._lastDistFt = estFt;
         document.getElementById('nixieDist').innerHTML = estFt + '<span class="unit">ft</span>';
         document.getElementById('distSub').textContent = 'IN FLIGHT';
       } else if (this._fsm.state === FSM.S.AIR && this._fsm._t0 && (!tState || tState.speed === null)) {
         // Airborne but no GPS — show airtime-based running estimate
         const elapsedS = (performance.now() - this._fsm._t0) / 1000;
-        const estFt    = Math.round(25 * 1.46667 * elapsedS * 0.85);
+        const estFt    = Math.round(25 * 1.46667 * elapsedS * this._arcFactor);
         document.getElementById('nixieDist').innerHTML = '~' + estFt + '<span class="unit">ft</span>';
         document.getElementById('distSub').textContent = 'IN FLIGHT';
       } else if (this._fsm.state !== FSM.S.AIR && !this._jumps.length) {
@@ -1243,9 +1244,9 @@ class App {
     this._bikeType = type;
 
     const presets = {
-      electric: { ff: 0.80, land: 1.2, minMs: 50,
+      electric: { ff: 0.80, land: 1.2, minMs: 50, arcFactor: 0.50,
         label: '⚡ ELECTRIC — ff:0.80G · land:1.2G · min:50ms' },
-      gas:      { ff: 0.25, land: 2.0, minMs: 250,
+      gas:      { ff: 0.25, land: 2.0, minMs: 250, arcFactor: 0.85,
         label: '🔥 GAS — ff:0.25G · land:2.0G · min:250ms' },
     };
 
@@ -1253,6 +1254,7 @@ class App {
     this._fsm.cfg.ff    = p.ff;
     this._fsm.cfg.land  = p.land;
     this._fsm.cfg.minMs = p.minMs;
+    this._arcFactor     = p.arcFactor;
     this._wave._ff      = p.ff;
     this._wave._land    = p.land;
     this._wave._dirty   = true;
@@ -1328,19 +1330,19 @@ class App {
       } else if (t.speed !== null) {
         // GPS didn't update (< 1Hz) — fall back to speed × airtime
         const speedFps = t.speed * 1.46667;
-        distFt    = Math.round(speedFps * (e.airtimeMs / 1000) * 0.85);
+        distFt    = Math.round(speedFps * (e.airtimeMs / 1000) * this._arcFactor);
         distLabel = 'EST DIST';
       }
     } else if (t && t.speed !== null) {
       // Have speed but no coords
       const speedFps = t.speed * 1.46667;
-      distFt    = Math.round(speedFps * (e.airtimeMs / 1000) * 0.85);
+      distFt    = Math.round(speedFps * (e.airtimeMs / 1000) * this._arcFactor);
       distLabel = 'EST DIST';
     } else {
       // No GPS at all — airtime-based estimate
       // Assumes ~25mph approach speed typical for MX
       const speedFps = 25 * 1.46667;
-      distFt    = Math.round(speedFps * (e.airtimeMs / 1000) * 0.85);
+      distFt    = Math.round(speedFps * (e.airtimeMs / 1000) * this._arcFactor);
       distLabel = '~ EST';
     }
 
