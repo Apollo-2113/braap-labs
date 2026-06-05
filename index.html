@@ -201,7 +201,7 @@ body::after {
 /* SVG GAUGE */
 .gauge-svg-wrap {
   position: relative;
-  width: 140px; height: 95px;
+  width: 130px; height: 80px;
   overflow: visible;
 }
 
@@ -442,70 +442,6 @@ canvas#analogWave {
   color: var(--white-dim);
 }
 
-/* ── FILM GRAIN OVERLAY ── */
-.grain-overlay {
-  position: fixed; inset: 0;
-  pointer-events: none; z-index: 999;
-  opacity: 0.055;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='grain'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23grain)'/%3E%3C/svg%3E");
-  animation: grain-shift 0.12s steps(1) infinite;
-}
-@keyframes grain-shift {
-  0%   { transform: translate(0,0); }
-  25%  { transform: translate(-2px, 1px); }
-  50%  { transform: translate(1px, -2px); }
-  75%  { transform: translate(2px, 1px); }
-  100% { transform: translate(-1px, 2px); }
-}
-
-/* ── UNIVERSAL RIVETS — all four corners of every panel ── */
-.gauge-housing,
-.airtime-housing,
-.strip-housing,
-.log-housing,
-.state-bar,
-.header-plate {
-  position: relative;
-}
-
-/* Use a single ::after for bottom-right rivet on panels that already use ::before/::after */
-.rivet-panel {
-  position: relative;
-}
-.rivet-panel .r-tl,
-.rivet-panel .r-tr,
-.rivet-panel .r-bl,
-.rivet-panel .r-br {
-  position: absolute;
-  width: 7px; height: 7px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 35% 35%, var(--chrome-hi), var(--chrome-dim));
-  box-shadow: inset 0 1px 2px rgba(0,0,0,0.7), 0 0 0 1px rgba(0,0,0,0.3);
-  z-index: 2;
-}
-.rivet-panel .r-tl { top:5px;    left:5px;  }
-.rivet-panel .r-tr { top:5px;    right:5px; }
-.rivet-panel .r-bl { bottom:5px; left:5px;  }
-.rivet-panel .r-br { bottom:5px; right:5px; }
-
-/* ── ODOMETER ROLL-UP ── */
-.odometer-wrap {
-  display: inline-flex;
-  overflow: hidden;
-  height: 1.1em;
-  vertical-align: bottom;
-}
-.odometer-digit {
-  display: flex;
-  flex-direction: column;
-  transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
-}
-.odometer-digit span {
-  height: 1.1em;
-  line-height: 1.1em;
-  display: block;
-}
-
 .empty-log {
   padding: 32px;
   text-align: center;
@@ -519,14 +455,10 @@ canvas#analogWave {
 </head>
 <body>
 
-<div class="grain-overlay"></div>
-
 <div class="shell">
 
   <!-- HEADER -->
-  <div class="header-plate rivet-panel">
-    <div class="r-tl"></div><div class="r-tr"></div>
-    <div class="r-bl"></div><div class="r-br"></div>
+  <div class="header-plate">
     <div class="logo">MOTO <span>AIR</span></div>
     <div class="header-rivets">
       <div class="rivet"></div>
@@ -536,9 +468,7 @@ canvas#analogWave {
   </div>
 
   <!-- STATE BAR -->
-  <div class="state-bar rivet-panel">
-    <div class="r-tl"></div><div class="r-tr"></div>
-    <div class="r-bl"></div><div class="r-br"></div>
+  <div class="state-bar">
     <div class="state-seg active-ground" id="seg0">Ground</div>
     <div class="state-seg" id="seg1">Airborne</div>
     <div class="state-seg" id="seg2">Impact</div>
@@ -548,78 +478,81 @@ canvas#analogWave {
   <div class="gauge-row">
 
     <!-- G-FORCE GAUGE -->
-    <div class="gauge-housing rivet-panel">
-      <div class="r-tl"></div><div class="r-tr"></div>
-      <div class="r-bl"></div><div class="r-br"></div>
+    <div class="gauge-housing">
       <div class="gauge-label">G-Force</div>
       <div class="gauge-svg-wrap">
-        <svg viewBox="0 0 140 95" width="140" height="95">
+        <svg viewBox="0 0 130 80" width="130" height="80" style="overflow:visible">
           <defs>
-            <radialGradient id="dialBg" cx="50%" cy="90%" r="70%">
-              <stop offset="0%" stop-color="#1c1600"/>
-              <stop offset="100%" stop-color="#060400"/>
+            <radialGradient id="dialGrad" cx="50%" cy="100%" r="80%">
+              <stop offset="0%" stop-color="#141000"/>
+              <stop offset="100%" stop-color="#080600"/>
             </radialGradient>
-            <filter id="needleGlow" x="-50%" y="-50%" width="200%" height="200%">
-              <feGaussianBlur stdDeviation="2" result="blur"/>
-              <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-            </filter>
-            <filter id="arcGlow" x="-20%" y="-20%" width="140%" height="140%">
-              <feGaussianBlur stdDeviation="2.5" result="blur"/>
+            <filter id="glow">
+              <feGaussianBlur stdDeviation="1.5" result="blur"/>
               <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
             </filter>
           </defs>
-          <path d="M 8 88 A 62 62 0 0 1 132 88" fill="url(#dialBg)" stroke="#3a2e08" stroke-width="1.5"/>
-          <path d="M 4 88 A 66 66 0 0 1 136 88" fill="none" stroke="#5a4010" stroke-width="2"/>
-          <!-- Arc zones -->
-          <path d="M 12 88 A 58 58 0 0 1 44 38" fill="none" stroke="#a8c820" stroke-width="6" stroke-linecap="butt" opacity="0.75" filter="url(#arcGlow)"/>
-          <path d="M 44 38 A 58 58 0 0 1 96 38" fill="none" stroke="#f0a800" stroke-width="6" stroke-linecap="butt" opacity="0.75" filter="url(#arcGlow)"/>
-          <path d="M 96 38 A 58 58 0 0 1 128 88" fill="none" stroke="#e84820" stroke-width="6" stroke-linecap="butt" opacity="0.80" filter="url(#arcGlow)"/>
-          <!-- Major ticks -->
-          <g stroke="#c8a820" stroke-width="1.5">
-            <line x1="70" y1="28" x2="70" y2="38" transform="rotate(-90 70 88)"/>
-            <line x1="70" y1="28" x2="70" y2="38" transform="rotate(-54 70 88)"/>
-            <line x1="70" y1="28" x2="70" y2="38" transform="rotate(-18 70 88)"/>
-            <line x1="70" y1="28" x2="70" y2="38" transform="rotate(18 70 88)"/>
-            <line x1="70" y1="28" x2="70" y2="38" transform="rotate(54 70 88)"/>
-            <line x1="70" y1="28" x2="70" y2="38" transform="rotate(90 70 88)"/>
+
+          <!-- Dial face -->
+          <path d="M 10 75 A 55 55 0 0 1 120 75" fill="url(#dialGrad)" stroke="#1e2530" stroke-width="1"/>
+
+          <!-- Tick marks -->
+          <g stroke="#2e3d50" stroke-width="1">
+            <!-- Major ticks at 0,1,2,3,4,5G -->
+            <line x1="65" y1="75" x2="65" y2="75" transform="rotate(-90,65,75) translate(0,-42)" />
           </g>
-          <!-- Minor ticks -->
-          <g stroke="#7a5808" stroke-width="1">
-            <line x1="70" y1="30" x2="70" y2="38" transform="rotate(-72 70 88)"/>
-            <line x1="70" y1="30" x2="70" y2="38" transform="rotate(-36 70 88)"/>
-            <line x1="70" y1="30" x2="70" y2="38" transform="rotate(0 70 88)"/>
-            <line x1="70" y1="30" x2="70" y2="38" transform="rotate(36 70 88)"/>
-            <line x1="70" y1="30" x2="70" y2="38" transform="rotate(72 70 88)"/>
+
+          <!-- Arc segments: green=normal, amber=warning, red=danger -->
+          <path d="M 15 75 A 50 50 0 0 1 46 32" fill="none" stroke="#40d880" stroke-width="4" stroke-linecap="round" opacity="0.5"/>
+          <path d="M 46 32 A 50 50 0 0 1 84 32" fill="none" stroke="#f0a800" stroke-width="4" stroke-linecap="round" opacity="0.5"/>
+          <path d="M 84 32 A 50 50 0 0 1 115 75" fill="none" stroke="#f0a800" stroke-width="4" stroke-linecap="round" opacity="0.5"/>
+
+          <!-- Scale labels -->
+          <text x="12" y="72" font-family="Share Tech Mono" font-size="7" fill="#7a5808">0</text>
+          <text x="31" y="40" font-family="Share Tech Mono" font-size="7" fill="#7a5808">1</text>
+          <text x="61" y="26" font-family="Share Tech Mono" font-size="7" fill="#7a5808">2</text>
+          <text x="91" y="34" font-family="Share Tech Mono" font-size="7" fill="#7a5808">3</text>
+          <text x="109" y="56" font-family="Share Tech Mono" font-size="7" fill="#7a5808">5</text>
+
+          <!-- Needle -->
+          <g id="gNeedle" style="transform-origin: 65px 75px; transform: rotate(-90deg);">
+            <line x1="65" y1="75" x2="65" y2="28" stroke="#f0a800" stroke-width="1.5" stroke-linecap="round" filter="url(#glow)"/>
+            <circle cx="65" cy="75" r="4" fill="#0c0a00" stroke="#a0b8cc" stroke-width="1.5"/>
           </g>
-          <!-- Labels -->
-          <text x="9"   y="85" font-family="Share Tech Mono" font-size="7" fill="#c8a820" text-anchor="middle">0</text>
-          <text x="28"  y="50" font-family="Share Tech Mono" font-size="7" fill="#c8a820" text-anchor="middle">1</text>
-          <text x="70"  y="24" font-family="Share Tech Mono" font-size="7" fill="#c8a820" text-anchor="middle">2</text>
-          <text x="112" y="50" font-family="Share Tech Mono" font-size="7" fill="#c8a820" text-anchor="middle">3</text>
-          <text x="131" y="85" font-family="Share Tech Mono" font-size="7" fill="#c8a820" text-anchor="middle">5</text>
-          <!-- Needle — tapered, pivots at (70,88) via SVG transform -->
-          <g id="gNeedle" transform="rotate(-90 70 88)">
-            <polygon points="70,92 68,98 70,101 72,98" fill="#6a4808"/>
-            <polygon points="70,88 69,82 70,30 71,82" fill="#f0a800" filter="url(#needleGlow)"/>
-            <circle cx="70" cy="88" r="5.5" fill="#1c1600" stroke="#c8a820" stroke-width="1.5"/>
-            <circle cx="70" cy="88" r="2"   fill="#f0c840"/>
-          </g>
-          <!-- Readout box -->
-          <rect x="46" y="66" width="48" height="15" rx="2" fill="#080600" stroke="#3a2e08" stroke-width="1"/>
-          <text id="gText" x="70" y="77" text-anchor="middle" font-family="Share Tech Mono" font-size="9" fill="#f0c840">1.00G</text>
+
+          <!-- Digital readout -->
+          <text id="gText" x="65" y="68" text-anchor="middle" font-family="Share Tech Mono" font-size="10" fill="#f0c840">1.00G</text>
         </svg>
       </div>
     </div>
 
-    <!-- ATTITUDE INDICATOR -->
-    <div class="gauge-housing rivet-panel" style="padding:10px 8px;">
-      <div class="r-tl"></div><div class="r-tr"></div>
-      <div class="r-bl"></div><div class="r-br"></div>
-      <div class="gauge-label">Attitude</div>
-      <canvas id="adiCanvas" width="130" height="130" style="display:block;border-radius:50%;"></canvas>
-      <div style="display:flex;justify-content:space-between;width:130px;margin-top:4px">
-        <div style="font-family:'Share Tech Mono',monospace;font-size:8px;color:#7a5808">ROLL <span id="adiRoll" style="color:#f0c840">0°</span></div>
-        <div style="font-family:'Share Tech Mono',monospace;font-size:8px;color:#7a5808">PITCH <span id="adiPitch" style="color:#f0c840">0°</span></div>
+    <!-- ROTATION GAUGE -->
+    <div class="gauge-housing">
+      <div class="gauge-label">Rotation °/s</div>
+      <div class="gauge-svg-wrap">
+        <svg viewBox="0 0 130 80" width="130" height="80" style="overflow:visible">
+          <defs>
+            <filter id="glow2">
+              <feGaussianBlur stdDeviation="1.5" result="blur"/>
+              <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+          </defs>
+          <path d="M 10 75 A 55 55 0 0 1 120 75" fill="url(#dialGrad)" stroke="#1e2530" stroke-width="1"/>
+
+          <!-- Arc -->
+          <path d="M 15 75 A 50 50 0 0 1 65 25" fill="none" stroke="#f0a800" stroke-width="4" stroke-linecap="round" opacity="0.4"/>
+          <path d="M 65 25 A 50 50 0 0 1 115 75" fill="none" stroke="#f0a800" stroke-width="4" stroke-linecap="round" opacity="0.4"/>
+
+          <text x="12"  y="72" font-family="Share Tech Mono" font-size="7" fill="#7a5808">0</text>
+          <text x="55"  y="22" font-family="Share Tech Mono" font-size="7" fill="#7a5808">300</text>
+          <text x="104" y="56" font-family="Share Tech Mono" font-size="7" fill="#7a5808">600</text>
+
+          <g id="rNeedle" style="transform-origin: 65px 75px; transform: rotate(-90deg);">
+            <line x1="65" y1="75" x2="65" y2="28" stroke="#f0a800" stroke-width="1.5" stroke-linecap="round" filter="url(#glow2)"/>
+            <circle cx="65" cy="75" r="4" fill="#0c0a00" stroke="#a0b8cc" stroke-width="1.5"/>
+          </g>
+          <text id="rText" x="65" y="68" text-anchor="middle" font-family="Share Tech Mono" font-size="10" fill="#f0c840">0°/s</text>
+        </svg>
       </div>
     </div>
   </div>
@@ -634,9 +567,7 @@ canvas#analogWave {
   </div>
 
   <!-- STRIP CHART -->
-  <div class="strip-housing rivet-panel">
-    <div class="r-tl"></div><div class="r-tr"></div>
-    <div class="r-bl"></div><div class="r-br"></div>
+  <div class="strip-housing">
     <div class="strip-header">
       <div class="strip-title">Accel. Magnitude — Filtered</div>
       <div class="strip-hz" id="stripHz">0 Hz</div>
@@ -653,9 +584,7 @@ canvas#analogWave {
   </div>
 
   <!-- JUMP LOG -->
-  <div class="log-housing rivet-panel">
-    <div class="r-tl"></div><div class="r-tr"></div>
-    <div class="r-bl"></div><div class="r-br"></div>
+  <div class="log-housing">
     <div class="log-header">
       <div class="log-title">Jump Record</div>
       <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--border2)" id="logCount">0 JUMPS</div>
@@ -792,276 +721,14 @@ class Sim {
   _next(ph){this._ph=ph;this._pht=0;if(ph==='ride')this._nextT=this._rideT();if(ph==='air')this._nextT=this._airT();}
 }
 
-/* ── Attitude Indicator (ADI) ──
-   Retro aircraft artificial horizon.
-   - Sky (amber-tinted) above horizon, ground (dark brown) below.
-   - Horizon line rolls with bank angle (gx integrated) and
-     translates vertically with pitch (gy integrated).
-   - Fixed aircraft reference symbol in centre.
-   - Roll graduation marks on outer bezel ring.
-   - Integrates gyro rates over time, with auto-level when stationary.
-*/
-class AttitudeIndicator {
-  constructor(canvasId) {
-    this._canvasId = canvasId;
-    this._c    = null;
-    this._ctx  = null;
-    this._roll  = 0;
-    this._pitch = 0;
-    this._lastT = performance.now();
-    this._rollVel  = 0;
-    this._pitchVel = 0;
-  }
-
-  _init() {
-    if (this._c) return true;
-    const el = document.getElementById(this._canvasId);
-    if (!el) return false;
-    this._c   = el;
-    this._ctx = el.getContext('2d');
-    if (!this._ctx) return false;
-    this._draw();
-    return true;
-  }
-
-  _draw() {
-    if (!this._c || !this._ctx) return;
-    const ctx = this._ctx;
-    const W = this._c.width;   // use actual pixel dimensions
-    const H = this._c.height;
-    const CX = W / 2, CY = H / 2;
-    const R  = Math.min(W, H) / 2 - 2;
-
-    ctx.clearRect(0, 0, W, H);
-
-    // Pitch offset in pixels — hard clamped
-    const pitchPx = Math.max(-(R*0.8), Math.min(R*0.8,
-      this._pitch * (H / 80)));
-
-    // ── Sky fill (above horizon)
-    ctx.save();
-    ctx.beginPath();
-    ctx.arc(CX, CY, R, 0, Math.PI * 2);
-    ctx.clip();
-
-    // Rotate everything inside the circle by roll angle
-    ctx.translate(CX, CY);
-    ctx.rotate(this._roll * Math.PI / 180);
-    ctx.translate(-CX, -CY);
-
-    // Sky
-    ctx.fillStyle = '#0d1a30';
-    ctx.fillRect(0, 0, W, CY + pitchPx);
-
-    // Ground
-    ctx.fillStyle = '#1e0e00';
-    ctx.fillRect(0, CY + pitchPx, W, H);
-
-    // Horizon line
-    ctx.strokeStyle = '#f0c840';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(0, CY + pitchPx);
-    ctx.lineTo(W, CY + pitchPx);
-    ctx.stroke();
-
-    // Pitch lines
-    ctx.strokeStyle = 'rgba(240,200,64,0.45)';
-    ctx.lineWidth = 1;
-    ctx.font = `${Math.round(W*0.07)}px Share Tech Mono`;
-    ctx.fillStyle = 'rgba(240,200,64,0.55)';
-    ctx.textBaseline = 'middle';
-    for (let d = -30; d <= 30; d += 10) {
-      if (d === 0) continue;
-      const y   = CY + pitchPx - d * (H / 80);
-      const len = Math.abs(d) >= 20 ? W * 0.22 : W * 0.14;
-      ctx.beginPath();
-      ctx.moveTo(CX - len, y);
-      ctx.lineTo(CX + len, y);
-      ctx.stroke();
-      ctx.fillText(Math.abs(d), CX + len + 3, y);
-    }
-
-    ctx.restore(); // un-rotate + un-clip
-
-    // ── Fixed aircraft symbol (never rotates)
-    const aw = W * 0.22;
-    ctx.strokeStyle = '#f0c840';
-    ctx.lineWidth = Math.max(2, W * 0.018);
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    // Left wing bar
-    ctx.beginPath();
-    ctx.moveTo(CX - aw, CY);
-    ctx.lineTo(CX - aw * 0.4, CY);
-    ctx.lineTo(CX - aw * 0.4, CY + W * 0.05);
-    ctx.stroke();
-    // Right wing bar
-    ctx.beginPath();
-    ctx.moveTo(CX + aw, CY);
-    ctx.lineTo(CX + aw * 0.4, CY);
-    ctx.lineTo(CX + aw * 0.4, CY + W * 0.05);
-    ctx.stroke();
-    // Centre dot
-    ctx.fillStyle = '#f0c840';
-    ctx.beginPath();
-    ctx.arc(CX, CY, W * 0.03, 0, Math.PI * 2);
-    ctx.fill();
-
-    // ── Bezel ring + roll ticks (outside clip, drawn last)
-    ctx.strokeStyle = '#5a4010';
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.arc(CX, CY, R, 0, Math.PI * 2);
-    ctx.stroke();
-
-    // Roll tick marks on bezel
-    ctx.strokeStyle = '#c8a820';
-    ctx.lineWidth = 1.5;
-    for (const deg of [-60, -45, -30, -20, -10, 0, 10, 20, 30, 45, 60]) {
-      const rad   = (deg - 90) * Math.PI / 180;
-      const outer = R - 1;
-      const inner = deg % 30 === 0 ? R - 10 : R - 6;
-      ctx.beginPath();
-      ctx.moveTo(CX + Math.cos(rad) * outer, CY + Math.sin(rad) * outer);
-      ctx.lineTo(CX + Math.cos(rad) * inner, CY + Math.sin(rad) * inner);
-      ctx.stroke();
-    }
-
-    // Roll pointer triangle (rotates with bank)
-    const rRad = (this._roll - 90) * Math.PI / 180;
-    const tDist = R - 14;
-    ctx.save();
-    ctx.translate(CX + Math.cos(rRad) * tDist, CY + Math.sin(rRad) * tDist);
-    ctx.rotate(this._roll * Math.PI / 180);
-    ctx.fillStyle = '#f0a800';
-    ctx.beginPath();
-    ctx.moveTo(0, -5);
-    ctx.lineTo(-4, 4);
-    ctx.lineTo(4, 4);
-    ctx.closePath();
-    ctx.fill();
-    ctx.restore();
-  }
-
-/* ── G gauge angle helper ── */
-// -90deg = 0G, 0deg = 2.5G, +90deg = 5G
+/* ── Needle animation ── */
+function setNeedle(id, angleDeg) {
+  document.getElementById(id).style.transform = `rotate(${angleDeg}deg)`;
+}
+// G gauge: -90deg = 0G, 0deg = 2.5G, +90deg = 5G
 function gToAngle(g) { return Math.min(90, Math.max(-90, (g/5)*180 - 90)); }
-
-   Spring-damper system: needle overshoots target then bounces back.
-   Each needle has: current angle, velocity, target angle.
-   Parameters tuned to feel like a real VDO/Smiths gauge needle.
-*/
-class InertialNeedle {
-  constructor(elId) {
-    this._el       = document.getElementById(elId);
-    this._angle    = -90;   // current rendered angle
-    this._velocity = 0;     // deg/frame
-    this._target   = -90;   // where needle wants to go
-    this._spring   = 0.18;  // stiffness  — higher = snappier
-    this._damping  = 0.72;  // damping    — lower = more bounce
-    this._drift    = 0;     // idle micro-vibration offset
-    this._driftT   = 0;     // drift time accumulator
-    this._lastRaf  = null;
-    this._lastTime = performance.now();
-    this._running  = false;
-  }
-
-  setTarget(angle) { this._target = angle; }
-
-  start() {
-    if (this._running) return;
-    this._running = true;
-    this._tick();
-  }
-
-  stop() { this._running = false; }
-
-  _tick() {
-    if (!this._running) return;
-
-    const now = performance.now();
-    const dt  = Math.min((now - this._lastTime) / 16.67, 3); // normalize to 60fps frames
-    this._lastTime = now;
-
-    // ── Spring-damper physics
-    const error      = this._target - this._angle;
-    const force      = error * this._spring;
-    this._velocity   = (this._velocity + force) * this._damping;
-    this._angle     += this._velocity * dt;
-
-    // ── Idle drift — random micro-vibration simulating engine harmonics
-    // Only active when needle is near settled (velocity low)
-    if (Math.abs(this._velocity) < 0.5) {
-      this._driftT += dt * 0.04;
-      // Layered sine waves at different frequencies = organic feel
-      this._drift = Math.sin(this._driftT * 2.3) * 0.4
-                  + Math.sin(this._driftT * 5.1) * 0.2
-                  + Math.sin(this._driftT * 11.7) * 0.1;
-    } else {
-      this._drift *= 0.85; // fade drift when moving
-    }
-
-    const rendered = this._angle + this._drift;
-    // Use SVG transform attribute — works correctly on all browsers
-    // Pivot point matches SVG needle geometry: (70, 88)
-    this._el.setAttribute('transform', `rotate(${rendered} 70 88)`);
-
-    requestAnimationFrame(() => this._tick());
-  }
-}
-
-/* ── Odometer Roll-up ──
-   Animates numeric digits rolling up like a mechanical counter.
-   Each digit column slides vertically to the new value.
-*/
-class Odometer {
-  constructor(el, digits = 5) {
-    this._el     = el;
-    this._digits = digits;
-    this._value  = null;
-    this._render('0.000');
-  }
-
-  setValue(str) {
-    if (str === this._value) return;
-    this._value = str;
-    this._render(str);
-  }
-
-  _render(str) {
-    this._el.innerHTML = '';
-    for (const ch of str) {
-      const wrap = document.createElement('div');
-      wrap.className = 'odometer-wrap';
-
-      if (ch === '.' || ch === 's') {
-        // Static character — no animation
-        const sep = document.createElement('span');
-        sep.textContent = ch;
-        sep.style.cssText = 'display:inline-block;';
-        this._el.appendChild(sep);
-        continue;
-      }
-
-      const digit = parseInt(ch);
-      const col   = document.createElement('div');
-      col.className = 'odometer-digit';
-
-      // Stack 0–9 vertically, position to show target digit
-      for (let i = 0; i <= 9; i++) {
-        const s = document.createElement('span');
-        s.textContent = i;
-        col.appendChild(s);
-      }
-
-      // Animate to target digit
-      col.style.transform = `translateY(-${digit * 1.1}em)`;
-      wrap.appendChild(col);
-      this._el.appendChild(wrap);
-    }
-  }
-}
+// Rotation gauge: -90 = 0, +90 = 600
+function wToAngle(w) { return Math.min(90, Math.max(-90, (w/600)*180 - 90)); }
 
 /* ── App ── */
 class App {
@@ -1077,16 +744,6 @@ class App {
       s => this._onState(s)
     );
     this._session = null; this._sim = null;
-
-    // ── Inertial needle for G-force gauge
-    this._gNeedle = new InertialNeedle('gNeedle');
-    this._gNeedle.start();
-
-    // ── Attitude Indicator — lazy init on first update
-    this._adi = new AttitudeIndicator('adiCanvas');
-
-    // ── Odometer for nixie airtime display
-    this._odometer = new Odometer(document.getElementById('nixieTime'));
 
     document.getElementById('btnEnable').addEventListener('click', () => this._startReal());
     document.getElementById('btnSim').addEventListener('click',    () => this._startSim());
@@ -1112,18 +769,17 @@ class App {
 
     if (now - this._lastUi > 40) {
       this._lastUi = now;
-      // G-force needle
-      this._gNeedle.setTarget(gToAngle(this._filtMag));
+      // Update G needle
+      setNeedle('gNeedle', gToAngle(this._filtMag));
       document.getElementById('gText').textContent = this._filtMag.toFixed(2)+'G';
-      // Attitude indicator — feed raw gyro axes directly
-      this._adi.update(f.gx, f.gy);
-      document.getElementById('adiRoll').textContent  = Math.round(this._adi._roll)+'°';
-      document.getElementById('adiPitch').textContent = Math.round(this._adi._pitch)+'°';
+      // Update rotation needle
+      setNeedle('rNeedle', wToAngle(gyroMag));
+      document.getElementById('rText').textContent = Math.round(gyroMag)+'°/s';
       document.getElementById('stripHz').textContent = this._lastHz + ' Hz';
 
       if (this._fsm.state === FSM.S.AIR && this._fsm._t0) {
         const el = (performance.now() - this._fsm._t0) / 1000;
-        this._odometer.setValue(el.toFixed(3) + 's');
+        document.getElementById('nixieTime').innerHTML = el.toFixed(3) + '<span class="unit">s</span>';
       }
     }
   }
@@ -1136,7 +792,7 @@ class App {
 
   _onJump(e) {
     this._jumps.unshift(e);
-    this._odometer.setValue((e.airtimeMs/1000).toFixed(3) + 's');
+    document.getElementById('nixieTime').innerHTML = (e.airtimeMs/1000).toFixed(3)+'<span class="unit">s</span>';
     document.getElementById('jumpCountSub').textContent = `SESSION — ${e.id} JUMP${e.id!==1?'S':''}`;
     document.getElementById('logCount').textContent = e.id + ' JUMP' + (e.id!==1?'S':'');
     this._renderLog();
@@ -1216,7 +872,7 @@ class App {
     this._jumps = []; this._fsm._count = 0;
     document.getElementById('logEntries').innerHTML = '';
     document.getElementById('emptyLog').style.display = '';
-    this._odometer.setValue('0.000s');
+    document.getElementById('nixieTime').innerHTML = '0.000<span class="unit">s</span>';
     document.getElementById('jumpCountSub').textContent = 'SESSION — 0 JUMPS';
     document.getElementById('logCount').textContent = '0 JUMPS';
   }
@@ -1228,15 +884,7 @@ class App {
   }
 }
 
-window.addEventListener('DOMContentLoaded', () => {
-  try {
-    window._app = new App();
-    // Force ADI to render immediately
-    window._app._adi._init();
-  } catch(e) {
-    console.error('App init error:', e);
-  }
-});
+window.addEventListener('DOMContentLoaded', () => { window._app = new App(); });
 </script>
 </body>
 </html>
