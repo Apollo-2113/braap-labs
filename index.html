@@ -870,38 +870,58 @@ function sToAngle(mph) { return Math.min(90, Math.max(-90, (mph / 80) * 180 - 90
 // Distance gauge: -90deg = 0ft, +90deg = 100ft
 
 /* ── GPS Speed Tracker ── */
+/* ── Haversine distance formula ──
+   Returns distance in feet between two GPS coordinates.
+   Accurate for short distances (< 1 mile).
+*/
+function haversineDistFt(lat1, lon1, lat2, lon2) {
+  const R    = 20902231; // Earth radius in feet
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a    = Math.sin(dLat/2) * Math.sin(dLat/2)
+             + Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180)
+             * Math.sin(dLon/2) * Math.sin(dLon/2);
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
 class GpsTracker {
   constructor(onStatus) {
-    this._speed    = null;
+    this._speed    = null;   // current speed mph
+    this._coords   = null;   // { lat, lon } latest position
     this._watchId  = null;
-    this._onStatus = onStatus; // callback('acquiring'|'locked'|'denied'|'unavailable')
+    this._onStatus = onStatus;
   }
+
   start() {
     if (!navigator.geolocation) { this._onStatus('unavailable'); return; }
     this._onStatus('acquiring');
     this._watchId = navigator.geolocation.watchPosition(
       pos => {
-        if (pos.coords.speed !== null && pos.coords.speed >= 0) {
-          this._speed = pos.coords.speed * 2.23694;
-        } else {
-          this._speed = 0;
-        }
+        this._coords = { lat: pos.coords.latitude, lon: pos.coords.longitude };
+        this._speed  = (pos.coords.speed !== null && pos.coords.speed >= 0)
+                       ? pos.coords.speed * 2.23694 : 0;
         this._onStatus('locked');
       },
-      err => {
-        this._onStatus(err.code === 1 ? 'denied' : 'unavailable');
-      },
+      err => { this._onStatus(err.code === 1 ? 'denied' : 'unavailable'); },
       { enableHighAccuracy: true, maximumAge: 500, timeout: 10000 }
     );
   }
+
   stop() {
     if (this._watchId !== null) navigator.geolocation.clearWatch(this._watchId);
-    this._watchId = null;
-    this._speed   = null;
+    this._watchId = null; this._speed = null; this._coords = null;
     this._onStatus('idle');
   }
+
+  // Snapshot full state at takeoff/landing
+  snapshotState() {
+    return { speed: this._speed, coords: this._coords ? {...this._coords} : null };
+  }
+
+  // Legacy speed-only snapshot
   snapshot() { return this._speed; }
 }
+
 
 /* ── App ── */
 class App {
@@ -918,8 +938,9 @@ class App {
     );
     this._session = null; this._sim = null;
     this._gps = new GpsTracker(status => this._updateGpsBadge(status));
-    this._takeoffSpeedMph = null;  // GPS speed snapshotted at takeoff
-    this._lastDistFt = 0;          // last jump distance for needle hold
+    this._takeoffGpsState  = null;  // { speed, coords } snapshotted at takeoff
+    this._takeoffSpeedMph  = null;  // quick access to speed for sim
+    this._lastDistFt       = 0;
 
     document.getElementById('btnEnable').addEventListener('click', () => this._startReal());
     document.getElementById('btnSim').addEventListener('click',    () => this._startSim());
@@ -956,15 +977,22 @@ class App {
         document.getElementById('sText').textContent = Math.round(spd) + ' mph';
       }
 
-      // Distance nixie — live estimate while airborne, holds on landing
-      if (this._fsm.state === FSM.S.AIR && this._fsm._t0 && this._takeoffSpeedMph !== null) {
+      // Distance nixie — live estimate while airborne
+      const tState = this._takeoffGpsState;
+      if (this._fsm.state === FSM.S.AIR && this._fsm._t0 && tState && tState.speed !== null) {
         const elapsedS = (performance.now() - this._fsm._t0) / 1000;
-        const speedFps = this._takeoffSpeedMph * 1.46667;
+        const speedFps = tState.speed * 1.46667;
         const estFt    = Math.round(speedFps * elapsedS * 0.85);
         this._lastDistFt = estFt;
         document.getElementById('nixieDist').innerHTML = estFt + '<span class="unit">ft</span>';
         document.getElementById('distSub').textContent = 'IN FLIGHT';
-      } else if (this._takeoffSpeedMph === null) {
+      } else if (this._fsm.state === FSM.S.AIR && this._fsm._t0 && (!tState || tState.speed === null)) {
+        // Airborne but no GPS — show airtime-based running estimate
+        const elapsedS = (performance.now() - this._fsm._t0) / 1000;
+        const estFt    = Math.round(25 * 1.46667 * elapsedS * 0.85);
+        document.getElementById('nixieDist').innerHTML = '~' + estFt + '<span class="unit">ft</span>';
+        document.getElementById('distSub').textContent = 'IN FLIGHT';
+      } else if (this._fsm.state !== FSM.S.AIR && !this._jumps.length) {
         document.getElementById('distSub').textContent = 'GPS NEEDED';
       }
       document.getElementById('stripHz').textContent = this._lastHz + ' Hz';
@@ -977,7 +1005,10 @@ class App {
   }
 
   _onState(s) {
-    if (s === FSM.S.AIR)  this._takeoffSpeedMph = this._gps.snapshot();
+    if (s === FSM.S.AIR) {
+      this._takeoffGpsState = this._gps.snapshotState();
+      this._takeoffSpeedMph = this._takeoffGpsState.speed;
+    }
     if (s === FSM.S.LAND) this._flashImpact();
   }
 
@@ -1047,17 +1078,46 @@ class App {
   }
 
   _onJump(e) {
-    // Calculate final distance using takeoff speed × airtime
-    let distFt = null;
-    if (this._takeoffSpeedMph !== null) {
-      const speedFps = this._takeoffSpeedMph * 1.46667;
-      distFt = Math.round(speedFps * (e.airtimeMs / 1000) * 0.85);
-      this._lastDistFt = distFt;
-      document.getElementById('nixieDist').innerHTML = distFt + '<span class="unit">ft</span>';
-      document.getElementById('distSub').textContent = 'LAST JUMP';
+    // ── Distance calculation — best available method
+    let distFt   = null;
+    let distLabel = 'LAST JUMP';
+
+    const landingState = this._gps.snapshotState();
+    const t = this._takeoffGpsState;
+
+    if (t && t.coords && landingState.coords) {
+      const haversine = haversineDistFt(
+        t.coords.lat, t.coords.lon,
+        landingState.coords.lat, landingState.coords.lon
+      );
+      if (haversine > 2) {
+        // GPS moved — use true position distance
+        distFt    = Math.round(haversine);
+        distLabel = 'GPS DIST';
+      } else if (t.speed !== null) {
+        // GPS didn't update (< 1Hz) — fall back to speed × airtime
+        const speedFps = t.speed * 1.46667;
+        distFt    = Math.round(speedFps * (e.airtimeMs / 1000) * 0.85);
+        distLabel = 'EST DIST';
+      }
+    } else if (t && t.speed !== null) {
+      // Have speed but no coords
+      const speedFps = t.speed * 1.46667;
+      distFt    = Math.round(speedFps * (e.airtimeMs / 1000) * 0.85);
+      distLabel = 'EST DIST';
+    } else {
+      // No GPS at all — airtime-based estimate
+      // Assumes ~25mph approach speed typical for MX
+      const speedFps = 25 * 1.46667;
+      distFt    = Math.round(speedFps * (e.airtimeMs / 1000) * 0.85);
+      distLabel = '~ EST';
     }
-    // Attach distance to event (freeze a new object with it)
-    const eventWithDist = Object.freeze({ ...e, distanceFt: distFt });
+
+    this._lastDistFt = distFt;
+    document.getElementById('nixieDist').innerHTML = distFt + '<span class="unit">ft</span>';
+    document.getElementById('distSub').textContent = distLabel;
+
+    const eventWithDist = Object.freeze({ ...e, distanceFt: distFt, distLabel });
     this._jumps.unshift(eventWithDist);
     document.getElementById('nixieTime').innerHTML = (e.airtimeMs/1000).toFixed(3)+'<span class="unit">s</span>';
     document.getElementById('jumpCountSub').textContent = `SESSION — ${e.id} JUMP${e.id!==1?'S':''}`;
@@ -1154,6 +1214,8 @@ class App {
     document.getElementById('emptyLog').style.display = '';
     document.getElementById('nixieTime').innerHTML = '0.000<span class="unit">s</span>';
     document.getElementById('jumpCountSub').textContent = 'SESSION — 0 JUMPS';
+    this._takeoffGpsState = null;
+    this._takeoffSpeedMph = null;
     this._lastDistFt = 0;
     document.getElementById('nixieDist').innerHTML = '--<span class="unit">ft</span>';
     document.getElementById('distSub').textContent = 'GPS NEEDED';
