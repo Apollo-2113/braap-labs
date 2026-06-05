@@ -878,8 +878,8 @@ class FSM {
       case FSM.S.AIR:
         if (gyro > this._peakW) this._peakW = gyro;
         if (rawMag > this._peakG) this._peakG = rawMag;
-        // Use RAW magnitude for landing — don't let LPF eat the spike
-        if (rawMag > this.cfg.land) { this._to(FSM.S.LAND, ts); this._doLand(rawMag, ts); }
+        // Use RAW magnitude for landing detection, filtered for impact recording
+        if (rawMag > this.cfg.land) { this._to(FSM.S.LAND, ts); this._doLand(mag, rawMag, ts); }
         break;
       case FSM.S.LAND:
         if (rawMag < 1.5) this._to(FSM.S.GROUND, ts);
@@ -887,11 +887,14 @@ class FSM {
     }
     return this._s;
   }
-  _doLand(impG, ts) {
+  _doLand(filtG, rawG, ts) {
     const ms = ts - this._t0;
     if (ms < this.cfg.minMs) return;
     this._count++;
-    this.onJump(Object.freeze({ id:this._count, timestamp:new Date(), airtimeMs:Math.round(ms), impactG:parseFloat(impG.toFixed(2)), peakW:Math.round(this._peakW) }));
+    // Use filtered G for recorded impact — raw is too spiky on handlebar mount
+    // Cap at 8G max — anything higher is handlebar vibration, not real impact
+    const impactG = Math.min(8.0, parseFloat(filtG.toFixed(2)));
+    this.onJump(Object.freeze({ id:this._count, timestamp:new Date(), airtimeMs:Math.round(ms), impactG, peakW:Math.round(this._peakW) }));
   }
   _to(s, ts) { const p=this._s; this._s=s; if(p!==s) this.onState(s,p); }
   get state() { return this._s; }
@@ -1092,10 +1095,12 @@ function haversineDistFt(lat1, lon1, lat2, lon2) {
 
 class GpsTracker {
   constructor(onStatus) {
-    this._speed    = null;   // current speed mph
-    this._coords   = null;   // { lat, lon } latest position
-    this._watchId  = null;
-    this._onStatus = onStatus;
+    this._speed          = null;   // current speed mph
+    this._lastKnownSpeed = null;   // persists between GPS updates — used at takeoff
+    this._coords         = null;
+    this._lastCoords     = null;   // persists for distance calc
+    this._watchId        = null;
+    this._onStatus       = onStatus;
   }
 
   start() {
@@ -1104,8 +1109,11 @@ class GpsTracker {
     this._watchId = navigator.geolocation.watchPosition(
       pos => {
         this._coords = { lat: pos.coords.latitude, lon: pos.coords.longitude };
-        this._speed  = (pos.coords.speed !== null && pos.coords.speed >= 0)
-                       ? pos.coords.speed * 2.23694 : 0;
+        this._lastCoords = { ...this._coords };
+        const spd = (pos.coords.speed !== null && pos.coords.speed >= 0)
+                    ? pos.coords.speed * 2.23694 : 0;
+        this._speed = spd;
+        if (spd > 1) this._lastKnownSpeed = spd; // only store if actually moving
         this._onStatus('locked');
       },
       err => { this._onStatus(err.code === 1 ? 'denied' : 'unavailable'); },
@@ -1116,16 +1124,18 @@ class GpsTracker {
   stop() {
     if (this._watchId !== null) navigator.geolocation.clearWatch(this._watchId);
     this._watchId = null; this._speed = null; this._coords = null;
+    this._lastKnownSpeed = null; this._lastCoords = null;
     this._onStatus('idle');
   }
 
-  // Snapshot full state at takeoff/landing
   snapshotState() {
-    return { speed: this._speed, coords: this._coords ? {...this._coords} : null };
+    // Use last known speed if current is null — GPS may not have updated yet
+    const speed  = this._speed ?? this._lastKnownSpeed;
+    const coords = this._coords ? {...this._coords} : null;
+    return { speed, coords };
   }
 
-  // Legacy speed-only snapshot
-  snapshot() { return this._speed; }
+  snapshot() { return this._speed ?? this._lastKnownSpeed; }
 }
 
 
