@@ -1430,9 +1430,9 @@ class Sim {
   }
 
   // Realistic MX timing
-  _rideT()   { return 1500 + Math.random() * 1500; } // 1.5–3s between jumps
-  _airT()    { return 350  + Math.random() * 650;  } // 0.35–1.0s airtime (realistic MX)
-  _settleT() { return 600  + Math.random() * 400;  } // 0.6–1s settle
+  _rideT()   { return 600  + Math.random() * 600;  } // 0.6–1.2s between jumps
+  _airT()    { return 350  + Math.random() * 650;  } // 0.35–1.0s airtime
+  _settleT() { return 300  + Math.random() * 200;  } // 0.3–0.5s settle
 
   start() {
     let last = performance.now();
@@ -1646,7 +1646,7 @@ class App {
       this._lastHz = this._sampleCount; this._sampleCount = 0; this._lastHzTime = now;
     }
 
-    const currentSpeedMph = this._gps.snapshot();
+    const currentSpeedMph = this._gps.snapshot() ?? this._takeoffSpeedMph;
     this._fsm.update(this._filtMag, rawMag, gyroMag, f.timestamp, currentSpeedMph);
     this._wave.push(this._filtMag);
 
