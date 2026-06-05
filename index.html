@@ -514,6 +514,10 @@ canvas#analogWave {
         <div class="sensor-dot" id="sessionDot"></div>
         <span id="sessionLabel">IDLE</span>
       </div>
+      <div class="sensor-badge" id="gpsBadge">
+        <div class="sensor-dot" id="gpsDot"></div>
+        <span id="gpsLabel">GPS</span>
+      </div>
     </div>
     <div class="best-airtime-display">
       <div class="best-airtime-label">🏆 Best</div>
@@ -821,28 +825,36 @@ function dToAngle(ft) { return Math.min(90, Math.max(-90, (ft / 100) * 180 - 90)
 
 /* ── GPS Speed Tracker ── */
 class GpsTracker {
-  constructor() {
-    this._speed  = null; // current speed in mph
-    this._watchId = null;
+  constructor(onStatus) {
+    this._speed    = null;
+    this._watchId  = null;
+    this._onStatus = onStatus; // callback('acquiring'|'locked'|'denied'|'unavailable')
   }
   start() {
-    if (!navigator.geolocation) return;
+    if (!navigator.geolocation) { this._onStatus('unavailable'); return; }
+    this._onStatus('acquiring');
     this._watchId = navigator.geolocation.watchPosition(
       pos => {
-        if (pos.coords.speed !== null && pos.coords.speed >= 0)
-          this._speed = pos.coords.speed * 2.23694; // m/s → mph
-        else
+        if (pos.coords.speed !== null && pos.coords.speed >= 0) {
+          this._speed = pos.coords.speed * 2.23694;
+        } else {
           this._speed = 0;
+        }
+        this._onStatus('locked');
       },
-      () => { this._speed = null; },
+      err => {
+        this._onStatus(err.code === 1 ? 'denied' : 'unavailable');
+      },
       { enableHighAccuracy: true, maximumAge: 500, timeout: 10000 }
     );
   }
   stop() {
     if (this._watchId !== null) navigator.geolocation.clearWatch(this._watchId);
-    this._speed = null;
+    this._watchId = null;
+    this._speed   = null;
+    this._onStatus('idle');
   }
-  snapshot() { return this._speed; } // call at takeoff moment
+  snapshot() { return this._speed; }
 }
 
 /* ── App ── */
@@ -859,7 +871,7 @@ class App {
       s => this._onState(s)
     );
     this._session = null; this._sim = null;
-    this._gps = new GpsTracker();
+    this._gps = new GpsTracker(status => this._updateGpsBadge(status));
     this._takeoffSpeedMph = null;  // GPS speed snapshotted at takeoff
     this._lastDistFt = 0;          // last jump distance for needle hold
 
@@ -946,7 +958,35 @@ class App {
     document.getElementById('btnSim').disabled    =  on;
   }
 
-  _updateBestAirtime() {
+  _updateGpsBadge(status) {
+    const badge = document.getElementById('gpsBadge');
+    const dot   = document.getElementById('gpsDot');
+    const label = document.getElementById('gpsLabel');
+    badge.className = 'sensor-badge';
+    dot.classList.remove('pulse');
+    switch(status) {
+      case 'acquiring':
+        label.textContent = 'GPS…';
+        dot.classList.add('pulse');
+        break;
+      case 'locked':
+        badge.classList.add('active');
+        dot.classList.add('pulse');
+        label.textContent = 'GPS';
+        break;
+      case 'denied':
+        badge.classList.add('error');
+        label.textContent = 'GPS ✗';
+        break;
+      case 'unavailable':
+        label.textContent = 'NO GPS';
+        break;
+      case 'idle':
+      default:
+        label.textContent = 'GPS';
+        break;
+    }
+  }
     if (!this._jumps.length) return;
     const best = Math.max(...this._jumps.map(j => j.airtimeMs));
     const el = document.getElementById('bestAirtimeVal');
