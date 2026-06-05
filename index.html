@@ -113,45 +113,77 @@ body::after {
 }
 
 /* ── STATE BAR ── */
-.state-bar {
+/* ── STATUS BAR ── */
+.status-bar {
   display: flex;
+  align-items: center;
+  justify-content: space-between;
   background: var(--bg2);
   border: 1px solid var(--border);
   border-radius: 3px;
-  overflow: hidden;
+  padding: 8px 14px;
   box-shadow: inset 0 2px 4px rgba(0,0,0,0.4);
 }
-.state-seg {
-  flex: 1;
-  padding: 8px 4px;
-  text-align: center;
+.sensor-badges {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.sensor-badge {
+  display: flex;
+  align-items: center;
+  gap: 5px;
   font-family: 'Share Tech Mono', monospace;
   font-size: 9px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--border2);
-  border-right: 1px solid var(--border);
-  position: relative;
+  padding: 3px 8px;
+  border: 1px solid var(--border);
+  border-radius: 2px;
   transition: all 0.3s;
 }
-.state-seg:last-child { border-right: none; }
-.state-seg.active-ground {
+.sensor-badge.active {
   color: var(--green);
-  background: rgba(168,200,32,0.08);
-  text-shadow: 0 0 8px rgba(168,200,32,0.55);
+  border-color: var(--green);
+  background: rgba(168,200,32,0.06);
 }
-.state-seg.active-air {
-  color: var(--ice);
-  background: rgba(240,168,0,0.09);
-  text-shadow: 0 0 8px rgba(64,200,240,0.6);
-  animation: flicker 0.8s ease-in-out infinite alternate;
-}
-.state-seg.active-land {
+.sensor-badge.error {
   color: var(--red);
-  background: rgba(232,64,48,0.1);
-  text-shadow: 0 0 8px rgba(232,64,48,0.6);
+  border-color: var(--red);
 }
-@keyframes flicker { from { opacity: 0.7; } to { opacity: 1; } }
+.sensor-dot {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.sensor-dot.pulse { animation: dot-pulse 1s ease-in-out infinite; }
+@keyframes dot-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.3; transform: scale(0.6); }
+}
+.best-airtime-display {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+}
+.best-airtime-label {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 8px;
+  color: var(--chrome-dim);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.best-airtime-value {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 16px;
+  color: var(--chrome-hi);
+  line-height: 1;
+  text-shadow: 0 0 10px rgba(240,168,0,0.4);
+}
+.best-airtime-value.empty { color: var(--border2); font-size: 11px; }
+
 
 /* ── GAUGE ROW ── */
 .gauge-row {
@@ -467,11 +499,26 @@ canvas#analogWave {
     </div>
   </div>
 
-  <!-- STATE BAR -->
-  <div class="state-bar">
-    <div class="state-seg active-ground" id="seg0">Ground</div>
-    <div class="state-seg" id="seg1">Airborne</div>
-    <div class="state-seg" id="seg2">Impact</div>
+  <!-- STATUS BAR -->
+  <div class="status-bar">
+    <div class="sensor-badges">
+      <div class="sensor-badge" id="accelBadge">
+        <div class="sensor-dot" id="accelDot"></div>
+        <span>ACCEL</span>
+      </div>
+      <div class="sensor-badge" id="gyroBadge">
+        <div class="sensor-dot" id="gyroDot"></div>
+        <span>GYRO</span>
+      </div>
+      <div class="sensor-badge" id="sessionBadge">
+        <div class="sensor-dot" id="sessionDot"></div>
+        <span id="sessionLabel">IDLE</span>
+      </div>
+    </div>
+    <div class="best-airtime-display">
+      <div class="best-airtime-label">🏆 Best</div>
+      <div class="best-airtime-value empty" id="bestAirtimeVal">—</div>
+    </div>
   </div>
 
   <!-- GAUGE ROW -->
@@ -825,9 +872,42 @@ class App {
   }
 
   _onState(s) {
-    document.getElementById('seg0').className = 'state-seg' + (s===FSM.S.GROUND ? ' active-ground':'');
-    document.getElementById('seg1').className = 'state-seg' + (s===FSM.S.AIR    ? ' active-air'   :'');
-    document.getElementById('seg2').className = 'state-seg' + (s===FSM.S.LAND   ? ' active-land'  :'');
+    // Flash impact overlay on landing
+    if (s === FSM.S.LAND) this._flashImpact();
+  }
+
+  _flashImpact() {
+    // Brief red screen flash on landing — subtle
+    document.body.style.transition = 'background 0.05s';
+    document.body.style.background = 'rgba(232,72,32,0.12)';
+    setTimeout(() => { document.body.style.background = ''; }, 120);
+  }
+
+  _setSessionActive(on) {
+    const badges = ['accel','gyro','session'];
+    badges.forEach(name => {
+      const badge = document.getElementById(name+'Badge');
+      const dot   = document.getElementById(name+'Dot');
+      if (on) {
+        badge.classList.add('active');
+        dot.classList.add('pulse');
+      } else {
+        badge.classList.remove('active');
+        dot.classList.remove('pulse');
+      }
+    });
+    document.getElementById('sessionLabel').textContent = on ? 'LIVE' : 'IDLE';
+    document.getElementById('btnStop').disabled   = !on;
+    document.getElementById('btnEnable').disabled =  on;
+    document.getElementById('btnSim').disabled    =  on;
+  }
+
+  _updateBestAirtime() {
+    if (!this._jumps.length) return;
+    const best = Math.max(...this._jumps.map(j => j.airtimeMs));
+    const el = document.getElementById('bestAirtimeVal');
+    el.textContent = (best / 1000).toFixed(3) + 's';
+    el.classList.remove('empty');
   }
 
   _onJump(e) {
@@ -835,6 +915,7 @@ class App {
     document.getElementById('nixieTime').innerHTML = (e.airtimeMs/1000).toFixed(3)+'<span class="unit">s</span>';
     document.getElementById('jumpCountSub').textContent = `SESSION — ${e.id} JUMP${e.id!==1?'S':''}`;
     document.getElementById('logCount').textContent = e.id + ' JUMP' + (e.id!==1?'S':'');
+    this._updateBestAirtime();
     this._renderLog();
   }
 
@@ -892,20 +973,20 @@ class App {
         this._frame({ax:a.x??0,ay:a.y??0,az:a.z??0,gx:r?.alpha??0,gy:r?.beta??0,gz:r?.gamma??0,timestamp:performance.now()});
       };
       window.addEventListener('devicemotion', this._motionCb, {passive:true});
-      this._setActive(true);
+      this._setSessionActive(true);
     } catch(e) { alert('Sensor error: '+e.message); }
   }
 
   _startSim() {
     this._sim = new Sim(f => this._frame(f));
     this._sim.start();
-    this._setActive(true);
+    this._setSessionActive(true);
   }
 
   _stop() {
     if (this._motionCb) { window.removeEventListener('devicemotion',this._motionCb); this._motionCb=null; }
     if (this._sim) { this._sim.stop(); this._sim=null; }
-    this._setActive(false);
+    this._setSessionActive(false);
   }
 
   _clear() {
@@ -915,12 +996,8 @@ class App {
     document.getElementById('nixieTime').innerHTML = '0.000<span class="unit">s</span>';
     document.getElementById('jumpCountSub').textContent = 'SESSION — 0 JUMPS';
     document.getElementById('logCount').textContent = '0 JUMPS';
-  }
-
-  _setActive(on) {
-    document.getElementById('btnStop').disabled    = !on;
-    document.getElementById('btnEnable').disabled  =  on;
-    document.getElementById('btnSim').disabled     =  on;
+    const best = document.getElementById('bestAirtimeVal');
+    best.textContent = '—'; best.classList.add('empty');
   }
 }
 
