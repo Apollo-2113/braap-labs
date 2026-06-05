@@ -1703,78 +1703,60 @@ class App {
     icon.textContent = sw ? '🌙' : '☀';
     lbl.textContent  = sw ? 'GOLDEN' : 'SW MODE';
 
-    // SW palette
-    const p = sw ? {
-      dialBg0:  '#001020', dialBg1:  '#000810',
-      bezelIn:  '#003048', bezelOut: '#005070',
-      arcGreen: '#00ff88', arcAmber: '#00d4ff', arcRed: '#ff3030',
-      tick:     '#00b4d8', tickDim:  '#005070',
-      label:    '#00b4d8', needleFill: '#00d4ff',
-      pivotBg:  '#000a0f', pivotRing: '#00b4d8', pivotDot: '#80f0ff',
-      readoutBg:'#000a0f', readoutBdr:'#003048', readoutTxt:'#00d4ff',
-    } : {
-      dialBg0:  '#1c1600', dialBg1:  '#060400',
-      bezelIn:  '#3a2e08', bezelOut: '#5a4010',
-      arcGreen: '#a8c820', arcAmber: '#f0a800', arcRed: '#e84820',
-      tick:     '#c8a820', tickDim:  '#7a5808',
-      label:    '#c8a820', needleFill: '#f0a800',
-      pivotBg:  '#1c1600', pivotRing: '#c8a820', pivotDot: '#f0c840',
-      readoutBg:'#080600', readoutBdr:'#3a2e08', readoutTxt:'#f0c840',
-    };
+    if (sw) {
+      // ── Snapshot original SVG colors before overwriting
+      this._svgSnapshot = [];
+      document.querySelectorAll('svg [fill], svg [stroke]').forEach(el => {
+        this._svgSnapshot.push({
+          el,
+          fill:   el.getAttribute('fill'),
+          stroke: el.getAttribute('stroke'),
+        });
+      });
+      // Also snapshot gradient stops
+      this._gradSnapshot = [];
+      document.querySelectorAll('#dialBg stop').forEach(s => {
+        this._gradSnapshot.push({ el: s, color: s.getAttribute('stop-color') });
+      });
 
-    // Update SVG gradient stop colors
-    document.querySelectorAll('#dialBg stop').forEach((s, i) => {
-      s.setAttribute('stop-color', i === 0 ? p.dialBg0 : p.dialBg1);
-    });
+      // ── Apply SW colors
+      const sw_colors = {
+        '#1c1600': { fill: '#000a0f' },
+        '#080600': { fill: '#000810' },
+        '#3a2e08': { stroke: '#001d2a', fill: '#000810' },
+        '#5a4010': { stroke: '#003858' },
+        '#a8c820': { stroke: '#00ff88', fill: '#00ff88' },
+        '#f0a800': { stroke: '#00d4ff', fill: '#00d4ff' },
+        '#e84820': { stroke: '#ff3030', fill: '#ff3030' },
+        '#c8a820': { stroke: '#00b4d8', fill: '#00b4d8' },
+        '#7a5808': { stroke: '#005070' },
+        '#f0c840': { fill: '#80f0ff' },
+      };
+      document.querySelectorAll('svg [fill], svg [stroke]').forEach(el => {
+        const f = el.getAttribute('fill');
+        const s = el.getAttribute('stroke');
+        if (f && sw_colors[f]?.fill)   el.setAttribute('fill',   sw_colors[f].fill);
+        if (s && sw_colors[s]?.stroke) el.setAttribute('stroke', sw_colors[s].stroke);
+      });
+      document.querySelectorAll('#dialBg stop').forEach((s, i) => {
+        s.setAttribute('stop-color', i === 0 ? '#001020' : '#000810');
+      });
 
-    // Recolor all gauge SVG elements by selector
-    const set = (sel, attr, val) =>
-      document.querySelectorAll(sel).forEach(el => el.setAttribute(attr, val));
+    } else {
+      // ── Restore exact original colors from snapshot
+      if (this._svgSnapshot) {
+        this._svgSnapshot.forEach(({ el, fill, stroke }) => {
+          if (fill   !== null) el.setAttribute('fill',   fill);
+          if (stroke !== null) el.setAttribute('stroke', stroke);
+        });
+      }
+      if (this._gradSnapshot) {
+        this._gradSnapshot.forEach(({ el, color }) => {
+          el.setAttribute('stop-color', color);
+        });
+      }
+    }
 
-    // Dial faces & bezels
-    set('svg path[stroke="#3a2e08"]', 'stroke', p.bezelIn);
-    set('svg path[stroke="#5a4010"]', 'stroke', p.bezelOut);
-
-    // Arc zones
-    set(`svg path[stroke="${sw ? '#a8c820' : '#00ff88'}"]`, 'stroke', p.arcGreen);
-    set(`svg path[stroke="${sw ? '#f0a800' : '#00d4ff'}"]`, 'stroke', p.arcAmber);
-    set(`svg path[stroke="${sw ? '#e84820' : '#ff3030'}"]`, 'stroke', p.arcRed);
-
-    // Ticks
-    set(`svg g[stroke="${sw ? '#c8a820' : '#00b4d8'}"] line`, 'stroke', p.tick);
-    set(`svg g[stroke="${sw ? '#7a5808' : '#005070'}"] line`, 'stroke', p.tickDim);
-
-    // Labels & readout text
-    document.querySelectorAll('svg text[fill]').forEach(t => {
-      const f = t.getAttribute('fill');
-      if (f === (sw ? '#00b4d8' : '#c8a820')) t.setAttribute('fill', p.label);
-      if (f === (sw ? '#00d4ff' : '#f0c840')) t.setAttribute('fill', p.readoutTxt);
-    });
-
-    // Needle polygons
-    document.querySelectorAll('svg polygon').forEach(el => {
-      const f = el.getAttribute('fill');
-      if (f === (sw ? '#f0a800' : '#00d4ff')) el.setAttribute('fill', p.needleFill);
-    });
-
-    // Pivot circles
-    document.querySelectorAll('svg circle').forEach(el => {
-      const f = el.getAttribute('fill');
-      const s = el.getAttribute('stroke');
-      if (f === (sw ? '#1c1600' : '#000a0f')) el.setAttribute('fill', p.pivotBg);
-      if (s === (sw ? '#c8a820' : '#00b4d8')) el.setAttribute('stroke', p.pivotRing);
-      if (f === (sw ? '#f0c840' : '#80f0ff')) el.setAttribute('fill', p.pivotDot);
-    });
-
-    // Readout boxes
-    document.querySelectorAll('svg rect').forEach(el => {
-      const f = el.getAttribute('fill');
-      const s = el.getAttribute('stroke');
-      if (f === (sw ? '#080600' : '#000a0f')) el.setAttribute('fill', p.readoutBg);
-      if (s === (sw ? '#3a2e08' : '#003048')) el.setAttribute('stroke', p.readoutBdr);
-    });
-
-    // Update waveform
     this._wave._swMode = sw;
     this._wave._dirty  = true;
     localStorage.setItem('motoair-theme', sw ? 'sw' : 'golden');
