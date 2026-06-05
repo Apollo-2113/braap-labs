@@ -749,7 +749,9 @@ class FSM {
     this._t0 = null; this._peakG = 0; this._peakW = 0;
     this._fsSamples = 0; this._filtGyro = 0; this._count = 0;
   }
-  update(mag, gyro, ts) {
+  update(mag, rawMag, gyro, ts) {
+    // mag = LPF filtered (good for freefall — removes engine vibration)
+    // rawMag = unfiltered (good for landing — preserves impact spike)
     this._filtGyro = SP.lpf(gyro, this._filtGyro, 0.2);
     switch(this._s) {
       case FSM.S.GROUND:
@@ -759,11 +761,12 @@ class FSM {
         break;
       case FSM.S.AIR:
         if (gyro > this._peakW) this._peakW = gyro;
-        if (mag > this._peakG) this._peakG = mag;
-        if (mag > this.cfg.land) { this._to(FSM.S.LAND, ts); this._doLand(mag, ts); }
+        if (rawMag > this._peakG) this._peakG = rawMag;
+        // Use RAW magnitude for landing — don't let LPF eat the spike
+        if (rawMag > this.cfg.land) { this._to(FSM.S.LAND, ts); this._doLand(rawMag, ts); }
         break;
       case FSM.S.LAND:
-        if (mag < 1.5) this._to(FSM.S.GROUND, ts);
+        if (rawMag < 1.5) this._to(FSM.S.GROUND, ts);
         break;
     }
     return this._s;
@@ -1048,7 +1051,7 @@ class App {
       this._lastHz = this._sampleCount; this._sampleCount = 0; this._lastHzTime = now;
     }
 
-    this._fsm.update(this._filtMag, gyroMag, f.timestamp);
+    this._fsm.update(this._filtMag, rawMag, gyroMag, f.timestamp);
     this._wave.push(this._filtMag);
 
     if (now - this._lastUi > 40) {
