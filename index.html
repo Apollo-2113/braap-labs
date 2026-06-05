@@ -2,1711 +2,1240 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>MOTO AIR — Jump Tracker</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>MOTO AIR — Golden Hour</title>
 <style>
-  /* ============================================================
-     DESIGN SYSTEM — Industrial Telemetry Aesthetic
-     Inspired by MX race data logging systems & aerospace HUDs
-  ============================================================ */
-  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow+Condensed:wght@300;400;600;700;900&family=Barlow:wght@300;400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Michroma&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap');
 
-  :root {
-    --bg-void:       #050608;
-    --bg-panel:      #0a0c10;
-    --bg-card:       #0f1218;
-    --bg-elevated:   #151a22;
-    --border-dim:    #1e2530;
-    --border-lit:    #2e3a4a;
-    --accent-hot:    #ff4d1a;
-    --accent-amber:  #ffaa00;
-    --accent-lime:   #aaff00;
-    --accent-ice:    #00d4ff;
-    --accent-muted:  #3a5068;
-    --text-primary:  #e8edf2;
-    --text-secondary:#7a8fa0;
-    --text-dim:      #3a4a5a;
-    --font-mono:     'Share Tech Mono', monospace;
-    --font-display:  'Barlow Condensed', sans-serif;
-    --font-body:     'Barlow', sans-serif;
-    --glow-hot:      0 0 20px rgba(255, 77, 26, 0.4);
-    --glow-ice:      0 0 20px rgba(0, 212, 255, 0.3);
-    --glow-lime:     0 0 20px rgba(170, 255, 0, 0.3);
-  }
+:root {
+  --bg:        #0a0900;
+  --bg2:       #141008;
+  --bg3:       #1c160a;
+  --border:    #2e2408;
+  --border2:   #504010;
+  --chrome:    #c8960a;
+  --chrome-dim:#7a5808;
+  --chrome-hi: #f0c840;
+  --white:     #f0e0a0;
+  --white-dim: #907830;
+  --red:       #e84820;
+  --ice:       #f0a800;
+  --ice-dim:   #805800;
+  --green:     #a8c820;
+  --needle:    #f0a800;
+  --glass:     rgba(240,168,0,0.04);
+}
 
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  body {
-    background: var(--bg-void);
-    color: var(--text-primary);
-    font-family: var(--font-body);
-    min-height: 100vh;
-    overflow-x: hidden;
-    /* Subtle scanline texture */
-    background-image: repeating-linear-gradient(
-      0deg,
-      transparent,
-      transparent 2px,
-      rgba(0,212,255,0.012) 2px,
-      rgba(0,212,255,0.012) 4px
-    );
-  }
+body {
+  background: var(--bg);
+  color: var(--white);
+  font-family: 'Rajdhani', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
 
-  /* ── NOISE OVERLAY ── */
-  body::before {
-    content: '';
-    position: fixed; inset: 0;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
-    pointer-events: none; z-index: 0; opacity: 0.6;
-  }
+/* Golden hour grain texture */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background:
+    repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(240,180,20,0.022) 3px, rgba(240,180,20,0.022) 4px),
+    repeating-linear-gradient(90deg, transparent, transparent 80px, rgba(240,180,20,0.012) 80px, rgba(240,180,20,0.012) 81px);
+  pointer-events: none; z-index: 0;
+}
 
-  /* ── HEADER ── */
-  header {
-    position: sticky; top: 0; z-index: 100;
-    background: rgba(5,6,8,0.92);
-    backdrop-filter: blur(16px);
-    border-bottom: 1px solid var(--border-dim);
-    padding: 0 24px;
-    display: flex; align-items: center; justify-content: space-between;
-    height: 56px;
-  }
+/* Golden hour vignette */
+body::after {
+  content: '';
+  position: fixed; inset: 0;
+  background: radial-gradient(ellipse at center, transparent 40%, rgba(6,4,0,0.82) 100%);
+  pointer-events: none; z-index: 0;
+}
 
-  .logo {
-    font-family: var(--font-display);
-    font-weight: 900;
-    font-size: 22px;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-  }
-  .logo span { color: var(--accent-hot); }
+.shell {
+  position: relative; z-index: 1;
+  max-width: 420px;
+  margin: 0 auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
 
-  .header-status {
-    display: flex; align-items: center; gap: 16px;
-    font-family: var(--font-mono);
-    font-size: 11px;
-    color: var(--text-secondary);
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-  }
+/* ── HEADER PLATE ── */
+.header-plate {
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: 3px;
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+  box-shadow:
+    inset 0 1px 0 rgba(240,180,20,0.10),
+    inset 0 -1px 0 rgba(0,0,0,0.5),
+    0 2px 8px rgba(0,0,0,0.6);
+}
 
-  .sensor-badge {
-    display: flex; align-items: center; gap: 6px;
-    padding: 4px 10px;
-    border: 1px solid var(--border-dim);
-    border-radius: 2px;
-    background: var(--bg-panel);
-  }
-  .sensor-badge.active { border-color: var(--accent-lime); color: var(--accent-lime); }
-  .sensor-badge.inactive { border-color: var(--accent-muted); color: var(--text-dim); }
-  .sensor-badge.error { border-color: var(--accent-hot); color: var(--accent-hot); }
+/* Brushed titanium lines */
+.header-plate::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: repeating-linear-gradient(
+    92deg,
+    transparent,
+    transparent 2px,
+    rgba(240,180,20,0.03) 2px,
+    rgba(240,180,20,0.03) 3px
+  );
+}
 
-  .dot {
-    width: 6px; height: 6px; border-radius: 50%;
-    background: currentColor;
-  }
-  .dot.pulse { animation: pulse-dot 1s ease-in-out infinite; }
+.logo {
+  font-family: 'Michroma', sans-serif;
+  font-size: 20px;
+  letter-spacing: 0.2em;
+  color: var(--chrome-hi);
+  text-shadow: 0 0 20px rgba(240,168,0,0.38);
+}
+.logo span { color: var(--ice); }
 
-  @keyframes pulse-dot {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.4; transform: scale(0.7); }
-  }
+.header-rivets {
+  display: flex; gap: 6px; align-items: center;
+}
+.rivet {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, var(--chrome-hi), var(--chrome-dim));
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.6), 0 1px 0 rgba(240,180,20,0.14);
+}
 
-  /* ── MAIN LAYOUT ── */
-  .app-shell {
-    position: relative; z-index: 1;
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 20px 16px;
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 16px;
-  }
+/* ── STATE BAR ── */
+.state-bar {
+  display: flex;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.4);
+}
+.state-seg {
+  flex: 1;
+  padding: 8px 4px;
+  text-align: center;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--border2);
+  border-right: 1px solid var(--border);
+  position: relative;
+  transition: all 0.3s;
+}
+.state-seg:last-child { border-right: none; }
+.state-seg.active-ground {
+  color: var(--green);
+  background: rgba(168,200,32,0.08);
+  text-shadow: 0 0 8px rgba(168,200,32,0.55);
+}
+.state-seg.active-air {
+  color: var(--ice);
+  background: rgba(240,168,0,0.09);
+  text-shadow: 0 0 8px rgba(64,200,240,0.6);
+  animation: flicker 0.8s ease-in-out infinite alternate;
+}
+.state-seg.active-land {
+  color: var(--red);
+  background: rgba(232,64,48,0.1);
+  text-shadow: 0 0 8px rgba(232,64,48,0.6);
+}
+@keyframes flicker { from { opacity: 0.7; } to { opacity: 1; } }
 
-  @media (min-width: 768px) {
-    .app-shell { padding: 24px; gap: 20px; }
-  }
+/* ── GAUGE ROW ── */
+.gauge-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
 
-  /* ── STATE MACHINE VISUALIZER ── */
-  .state-rail {
-    display: flex; align-items: center; gap: 0;
-    background: var(--bg-panel);
-    border: 1px solid var(--border-dim);
-    border-radius: 4px;
-    overflow: hidden;
-  }
+.gauge-housing {
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: 4px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+  box-shadow:
+    inset 0 2px 4px rgba(0,0,0,0.5),
+    inset 0 -1px 0 rgba(240,180,20,0.05),
+    0 1px 3px rgba(0,0,0,0.4);
+}
 
-  .state-node {
-    flex: 1;
-    padding: 12px 8px;
-    text-align: center;
-    font-family: var(--font-display);
-    font-weight: 700;
-    font-size: 11px;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    color: var(--text-dim);
-    border-right: 1px solid var(--border-dim);
-    position: relative;
-    transition: all 0.2s ease;
-  }
-  .state-node:last-child { border-right: none; }
+/* Corner screws */
+.gauge-housing::before,
+.gauge-housing::after {
+  content: '';
+  position: absolute;
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, var(--chrome-hi), var(--chrome-dim));
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.6);
+}
+.gauge-housing::before { top: 5px; left: 5px; }
+.gauge-housing::after  { top: 5px; right: 5px; }
 
-  .state-node.GROUND_RIDING.active {
-    background: rgba(170,255,0,0.08);
-    color: var(--accent-lime);
-    box-shadow: inset 0 -2px 0 var(--accent-lime);
-  }
-  .state-node.AIRBORNE_FREEFALL.active {
-    background: rgba(0,212,255,0.08);
-    color: var(--accent-ice);
-    box-shadow: inset 0 -2px 0 var(--accent-ice);
-    animation: airborne-flash 0.5s ease-in-out infinite alternate;
-  }
-  .state-node.LANDING_IMPACT.active {
-    background: rgba(255,77,26,0.12);
-    color: var(--accent-hot);
-    box-shadow: inset 0 -2px 0 var(--accent-hot);
-    animation: impact-shake 0.1s ease-in-out 4;
-  }
+.gauge-label {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--chrome-dim);
+  text-align: center;
+}
 
-  @keyframes airborne-flash { from { opacity: 0.7; } to { opacity: 1; } }
-  @keyframes impact-shake {
-    0%, 100% { transform: translateX(0); }
-    25% { transform: translateX(-2px); }
-    75% { transform: translateX(2px); }
-  }
+/* SVG GAUGE */
+.gauge-svg-wrap {
+  position: relative;
+  width: 140px; height: 95px;
+  overflow: visible;
+}
 
-  /* ── BIG METRICS ROW ── */
-  .metrics-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-  }
-  @media (min-width: 600px) {
-    .metrics-grid { grid-template-columns: repeat(4, 1fr); }
-  }
+/* ── BIG AIRTIME DISPLAY ── */
+.airtime-housing {
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: 4px;
+  padding: 16px 20px;
+  position: relative;
+  overflow: hidden;
+  box-shadow:
+    inset 0 2px 6px rgba(0,0,0,0.5),
+    inset 0 -1px 0 rgba(240,180,20,0.05);
+}
 
-  .metric-card {
-    background: var(--bg-card);
-    border: 1px solid var(--border-dim);
-    border-radius: 4px;
-    padding: 16px;
-    position: relative;
-    overflow: hidden;
-  }
-  .metric-card::before {
-    content: '';
-    position: absolute; top: 0; left: 0; right: 0;
-    height: 2px;
-    background: var(--accent-color, var(--border-dim));
-    opacity: 0.6;
-  }
+/* All four corner screws */
+.airtime-housing .screw {
+  position: absolute;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, var(--chrome-hi), var(--chrome-dim));
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.6);
+}
+.screw.tl { top:6px; left:6px; }
+.screw.tr { top:6px; right:6px; }
+.screw.bl { bottom:6px; left:6px; }
+.screw.br { bottom:6px; right:6px; }
 
-  .metric-label {
-    font-family: var(--font-mono);
-    font-size: 10px;
-    color: var(--text-secondary);
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    margin-bottom: 8px;
-  }
+.airtime-label {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--chrome-dim);
+  margin-bottom: 8px;
+}
 
-  .metric-value {
-    font-family: var(--font-display);
-    font-weight: 700;
-    font-size: 36px;
-    line-height: 1;
-    color: var(--accent-color, var(--text-primary));
-    transition: color 0.2s;
-  }
-  .metric-value.large { font-size: 48px; }
+/* Nixie-tube-style digits */
+.nixie {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 52px;
+  line-height: 1;
+  color: var(--ice);
+  text-shadow:
+    0 0 8px rgba(240,168,0,0.85),
+    0 0 20px rgba(240,168,0,0.45),
+    0 0 40px rgba(240,168,0,0.22);
+  letter-spacing: 0.05em;
+}
+.nixie .unit {
+  font-size: 18px;
+  opacity: 0.6;
+  vertical-align: bottom;
+  margin-left: 2px;
+}
 
-  .metric-unit {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    color: var(--text-secondary);
-    margin-top: 4px;
-  }
+.airtime-sub {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 11px;
+  color: var(--white-dim);
+  margin-top: 4px;
+  letter-spacing: 0.05em;
+}
 
-  /* ── WAVEFORM DISPLAY ── */
-  .panel {
-    background: var(--bg-card);
-    border: 1px solid var(--border-dim);
-    border-radius: 4px;
-    overflow: hidden;
-  }
+/* ── WAVEFORM / STRIP CHART ── */
+.strip-housing {
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: inset 0 2px 6px rgba(0,0,0,0.5);
+}
+.strip-header {
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--bg3);
+}
+.strip-title {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--chrome-dim);
+}
+.strip-hz {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9px;
+  color: var(--border2);
+}
+canvas#analogWave {
+  display: block;
+  width: 100%;
+  height: 90px;
+  background: #080600;
+}
 
-  .panel-header {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 10px 16px;
-    border-bottom: 1px solid var(--border-dim);
-    background: var(--bg-panel);
-  }
+/* ── JUMP LOG ── */
+.log-housing {
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.4);
+}
+.log-header {
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg3);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.log-title {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--chrome-dim);
+}
+.log-scroll {
+  max-height: 240px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border2) transparent;
+}
+.log-entry {
+  display: grid;
+  grid-template-columns: 32px 1fr 1fr 1fr 1fr;
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(58,52,32,0.5);
+  gap: 4px;
+  align-items: center;
+  transition: background 0.1s;
+}
+.log-entry:hover { background: var(--bg3); }
+.log-entry.new-entry { animation: log-in 0.4s ease-out; }
+@keyframes log-in {
+  from { background: rgba(240,168,0,0.07); transform: translateX(-6px); opacity: 0; }
+  to { background: transparent; transform: none; opacity: 1; }
+}
 
-  .panel-title {
-    font-family: var(--font-display);
-    font-weight: 700;
-    font-size: 12px;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    color: var(--text-secondary);
-  }
+.le-num {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  color: var(--border2);
+}
+.le-stat { display: flex; flex-direction: column; gap: 1px; }
+.le-val {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 13px;
+  color: var(--white);
+}
+.le-lbl {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 8px;
+  text-transform: uppercase;
+  color: var(--border2);
+  letter-spacing: 0.08em;
+}
+.le-delta {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9px;
+}
+.delta-up   { color: var(--green); }
+.delta-down { color: var(--red); }
+.delta-same { color: var(--border2); }
 
-  .panel-tag {
-    font-family: var(--font-mono);
-    font-size: 10px;
-    color: var(--text-dim);
-    letter-spacing: 0.1em;
-  }
+.le-badge {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9px;
+  color: var(--ice);
+  text-align: right;
+}
+.is-best .le-num::before {
+  content: '★';
+  display: block;
+  color: var(--chrome);
+  font-size: 10px;
+}
 
-  canvas#waveform {
-    display: block;
-    width: 100%;
-    height: 120px;
-    background: var(--bg-void);
-  }
+/* ── CONTROLS ── */
+.controls {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.btn {
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  border-radius: 3px;
+  cursor: pointer;
+  padding: 11px 16px;
+  transition: all 0.12s;
+  position: relative;
+  overflow: hidden;
+  box-shadow:
+    inset 0 1px 0 rgba(240,180,20,0.10),
+    inset 0 -2px 0 rgba(0,0,0,0.4),
+    0 2px 6px rgba(0,0,0,0.5);
+}
+.btn-start {
+  background: linear-gradient(180deg, #0e1e2e 0%, #080e18 100%);
+  border: 1px solid #604000;
+  color: var(--green);
+  text-shadow: 0 0 8px rgba(168,200,32,0.45);
+}
+.btn-start:hover {
+  background: linear-gradient(180deg, #122840 0%, #0a1e30 100%);
+  box-shadow: inset 0 1px 0 rgba(240,180,20,0.14), 0 0 12px rgba(240,168,0,0.22);
+}
+.btn-sim {
+  background: linear-gradient(180deg, #0e1a24 0%, #080e16 100%);
+  border: 1px solid var(--border2);
+  color: var(--ice);
+  text-shadow: 0 0 8px rgba(240,168,0,0.32);
+}
+.btn-sim:hover {
+  background: linear-gradient(180deg, #102030 0%, #081018 100%);
+}
+.btn-stop {
+  background: linear-gradient(180deg, #1a0810 0%, #0e0610 100%);
+  border: 1px solid #602030;
+  color: var(--red);
+  opacity: 0.5;
+}
+.btn-stop:not([disabled]) { opacity: 1; }
+.btn-clear {
+  background: linear-gradient(180deg, #121820 0%, #0a0e14 100%);
+  border: 1px solid var(--border);
+  color: var(--white-dim);
+}
 
-  /* ── CONTROL STRIP ── */
-  .controls {
-    display: flex; align-items: stretch; gap: 12px;
-    flex-wrap: wrap;
-  }
+/* ── FILM GRAIN OVERLAY ── */
+.grain-overlay {
+  position: fixed; inset: 0;
+  pointer-events: none; z-index: 999;
+  opacity: 0.055;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='grain'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23grain)'/%3E%3C/svg%3E");
+  animation: grain-shift 0.12s steps(1) infinite;
+}
+@keyframes grain-shift {
+  0%   { transform: translate(0,0); }
+  25%  { transform: translate(-2px, 1px); }
+  50%  { transform: translate(1px, -2px); }
+  75%  { transform: translate(2px, 1px); }
+  100% { transform: translate(-1px, 2px); }
+}
 
-  .btn {
-    font-family: var(--font-display);
-    font-weight: 700;
-    font-size: 14px;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    border: none;
-    border-radius: 3px;
-    cursor: pointer;
-    padding: 12px 24px;
-    transition: all 0.15s ease;
-    position: relative;
-    overflow: hidden;
-  }
+/* ── UNIVERSAL RIVETS — all four corners of every panel ── */
+.gauge-housing,
+.airtime-housing,
+.strip-housing,
+.log-housing,
+.state-bar,
+.header-plate {
+  position: relative;
+}
 
-  .btn-primary {
-    background: var(--accent-lime);
-    color: #000;
-  }
-  .btn-primary:hover { filter: brightness(1.1); box-shadow: var(--glow-lime); }
-  .btn-primary:active { transform: scale(0.97); }
-  .btn-primary:disabled { background: var(--border-dim); color: var(--text-dim); cursor: not-allowed; box-shadow: none; }
+/* Use a single ::after for bottom-right rivet on panels that already use ::before/::after */
+.rivet-panel {
+  position: relative;
+}
+.rivet-panel .r-tl,
+.rivet-panel .r-tr,
+.rivet-panel .r-bl,
+.rivet-panel .r-br {
+  position: absolute;
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, var(--chrome-hi), var(--chrome-dim));
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.7), 0 0 0 1px rgba(0,0,0,0.3);
+  z-index: 2;
+}
+.rivet-panel .r-tl { top:5px;    left:5px;  }
+.rivet-panel .r-tr { top:5px;    right:5px; }
+.rivet-panel .r-bl { bottom:5px; left:5px;  }
+.rivet-panel .r-br { bottom:5px; right:5px; }
 
-  .btn-danger {
-    background: transparent;
-    color: var(--accent-hot);
-    border: 1px solid var(--accent-hot);
-  }
-  .btn-danger:hover { background: rgba(255,77,26,0.1); box-shadow: var(--glow-hot); }
-  .btn-danger:disabled { opacity: 0.3; cursor: not-allowed; }
+/* ── ODOMETER ROLL-UP ── */
+.odometer-wrap {
+  display: inline-flex;
+  overflow: hidden;
+  height: 1.1em;
+  vertical-align: bottom;
+}
+.odometer-digit {
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+.odometer-digit span {
+  height: 1.1em;
+  line-height: 1.1em;
+  display: block;
+}
 
-  .btn-ghost {
-    background: transparent;
-    color: var(--text-secondary);
-    border: 1px solid var(--border-dim);
-  }
-  .btn-ghost:hover { border-color: var(--border-lit); color: var(--text-primary); }
-
-  /* ── SLIDERS CONFIG ── */
-  .config-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-    padding: 16px;
-  }
-  @media (min-width: 768px) {
-    .config-grid { grid-template-columns: repeat(4, 1fr); }
-  }
-
-  .config-item label {
-    display: block;
-    font-family: var(--font-mono);
-    font-size: 10px;
-    color: var(--text-secondary);
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    margin-bottom: 8px;
-  }
-
-  .config-item .val {
-    font-family: var(--font-mono);
-    font-size: 13px;
-    color: var(--accent-amber);
-    float: right;
-  }
-
-  input[type=range] {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 100%;
-    height: 4px;
-    background: var(--border-dim);
-    border-radius: 2px;
-    outline: none;
-    cursor: pointer;
-  }
-  input[type=range]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 14px; height: 14px;
-    border-radius: 50%;
-    background: var(--accent-amber);
-    box-shadow: 0 0 8px rgba(255,170,0,0.5);
-    transition: transform 0.1s;
-  }
-  input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.3); }
-
-  /* ── JUMP LOG TABLE ── */
-  .jump-log {
-    max-height: 320px;
-    overflow-y: auto;
-    scrollbar-width: thin;
-    scrollbar-color: var(--border-lit) transparent;
-  }
-
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    font-family: var(--font-mono);
-    font-size: 12px;
-  }
-
-  thead th {
-    padding: 10px 12px;
-    text-align: left;
-    font-size: 10px;
-    color: var(--text-dim);
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    border-bottom: 1px solid var(--border-dim);
-    position: sticky; top: 0;
-    background: var(--bg-panel);
-    white-space: nowrap;
-  }
-
-  tbody tr {
-    border-bottom: 1px solid rgba(30,37,48,0.5);
-    transition: background 0.1s;
-  }
-  tbody tr:hover { background: var(--bg-elevated); }
-  tbody tr.new-entry { animation: row-enter 0.4s ease-out; }
-
-  @keyframes row-enter {
-    from { background: rgba(170,255,0,0.08); transform: translateX(-8px); opacity: 0; }
-    to { background: transparent; transform: translateX(0); opacity: 1; }
-  }
-
-  tbody td {
-    padding: 10px 12px;
-    color: var(--text-secondary);
-    white-space: nowrap;
-  }
-
-  td.jump-num { color: var(--text-dim); }
-  td.airtime { color: var(--accent-ice); font-weight: bold; font-size: 14px; }
-  td.impact { color: var(--accent-hot); }
-  td.impact.heavy { color: var(--accent-hot); text-shadow: var(--glow-hot); }
-  td.peak-gyro { color: var(--accent-amber); }
-  td.timestamp { color: var(--text-dim); font-size: 11px; }
-
-  .empty-state {
-    padding: 40px;
-    text-align: center;
-    color: var(--text-dim);
-    font-family: var(--font-display);
-    font-size: 14px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-  }
-
-  /* ── IMPACT FLASH OVERLAY ── */
-  .impact-overlay {
-    position: fixed; inset: 0;
-    background: rgba(255,77,26,0.06);
-    pointer-events: none;
-    z-index: 999;
-    opacity: 0;
-    transition: opacity 0.05s;
-  }
-  .impact-overlay.flash { opacity: 1; }
-
-  /* ── AIRBORNE INDICATOR ── */
-  .airborne-banner {
-    position: fixed;
-    top: 64px; left: 50%;
-    transform: translateX(-50%) translateY(-80px);
-    background: var(--accent-ice);
-    color: #000;
-    font-family: var(--font-display);
-    font-weight: 900;
-    font-size: 13px;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    padding: 8px 20px;
-    border-radius: 2px;
-    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-    z-index: 200;
-    white-space: nowrap;
-  }
-  .airborne-banner.visible {
-    transform: translateX(-50%) translateY(0);
-  }
-
-  /* ── DEMO NOTE ── */
-  .demo-callout {
-    background: rgba(255,170,0,0.05);
-    border: 1px solid rgba(255,170,0,0.2);
-    border-radius: 4px;
-    padding: 12px 16px;
-    font-family: var(--font-mono);
-    font-size: 11px;
-    color: var(--accent-amber);
-    line-height: 1.6;
-  }
-  .demo-callout strong { font-weight: bold; color: #fff; }
-
-  /* ── JUMP CARDS ── */
-  .jump-cards-list {
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-  }
-
-  .jump-card {
-    display: grid;
-    grid-template-columns: 48px 1fr 1fr 1fr 80px;
-    align-items: center;
-    padding: 12px 16px;
-    border-bottom: 1px solid rgba(30,37,48,0.6);
-    transition: background 0.15s;
-    gap: 8px;
-  }
-  .jump-card:hover { background: var(--bg-elevated); }
-  .jump-card.new-entry { animation: row-enter 0.4s ease-out; }
-  .jump-card.is-best {
-    background: rgba(170,255,0,0.04);
-    border-left: 2px solid var(--accent-lime);
-  }
-
-  @media (max-width: 520px) {
-    .jump-card {
-      grid-template-columns: 40px 1fr 1fr 1fr 60px;
-      padding: 10px 12px;
-      gap: 4px;
-    }
-  }
-
-  .jc-num {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    color: var(--text-dim);
-  }
-  .jc-num .best-crown { color: var(--accent-lime); font-size: 13px; }
-
-  .jc-stat {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
-  .jc-label {
-    font-family: var(--font-mono);
-    font-size: 9px;
-    color: var(--text-dim);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-  }
-  .jc-value {
-    font-family: var(--font-display);
-    font-weight: 700;
-    font-size: 18px;
-    line-height: 1;
-  }
-  .jc-delta {
-    font-family: var(--font-mono);
-    font-size: 10px;
-    line-height: 1;
-    margin-top: 2px;
-  }
-  .delta-up   { color: #4ade80; }  /* green = better airtime/rotation */
-  .delta-down { color: var(--accent-hot); } /* red = less */
-  .delta-same { color: var(--text-dim); }
-
-  .jc-quality {
-    font-family: var(--font-mono);
-    font-size: 10px;
-    text-align: right;
-    letter-spacing: 0.05em;
-  }
-
-  /* ── SCROLLBAR ── */
-  ::-webkit-scrollbar { width: 6px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: var(--border-lit); border-radius: 3px; }
-
-  /* ── MISC ── */
-  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-  @media (max-width: 600px) { .grid-2 { grid-template-columns: 1fr; } }
-
-  .tag {
-    display: inline-block;
-    font-family: var(--font-mono);
-    font-size: 9px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    padding: 2px 6px;
-    border-radius: 2px;
-    background: var(--bg-elevated);
-    color: var(--text-dim);
-    border: 1px solid var(--border-dim);
-  }
+.empty-log {
+  padding: 32px;
+  text-align: center;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  color: var(--border2);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
 </style>
 </head>
 <body>
 
-<div class="impact-overlay" id="impactOverlay"></div>
+<div class="grain-overlay"></div>
 
-<!-- ═══════════════════════════════════════════════════════════
-     HEADER
-═══════════════════════════════════════════════════════════ -->
-<header>
-  <div class="logo">MOTO <span>AIR</span></div>
-  <div class="header-status">
-    <div class="sensor-badge inactive" id="accelBadge">
-      <div class="dot" id="accelDot"></div>
-      <span>ACCEL</span>
-    </div>
-    <div class="sensor-badge inactive" id="gyroBadge">
-      <div class="dot" id="gyroDot"></div>
-      <span>GYRO</span>
-    </div>
-    <div class="sensor-badge inactive" id="sessionBadge">
-      <div class="dot" id="sessionDot"></div>
-      <span id="sessionLabel">IDLE</span>
-    </div>
-  </div>
-</header>
+<div class="shell">
 
-<!-- ═══════════════════════════════════════════════════════════
-     APP SHELL
-═══════════════════════════════════════════════════════════ -->
-<div class="app-shell">
-
-  <!-- STATE MACHINE RAIL -->
-  <div class="state-rail">
-    <div class="state-node GROUND_RIDING active" id="stateGround">
-      <div>Ground Riding</div>
-    </div>
-    <div class="state-node AIRBORNE_FREEFALL" id="stateAirborne">
-      <div>Airborne / Freefall</div>
-    </div>
-    <div class="state-node LANDING_IMPACT" id="stateLanding">
-      <div>Landing Impact</div>
+  <!-- HEADER -->
+  <div class="header-plate rivet-panel">
+    <div class="r-tl"></div><div class="r-tr"></div>
+    <div class="r-bl"></div><div class="r-br"></div>
+    <div class="logo">MOTO <span>AIR</span></div>
+    <div class="header-rivets">
+      <div class="rivet"></div>
+      <div class="rivet"></div>
+      <div class="rivet"></div>
     </div>
   </div>
 
-  <!-- LIVE METRICS -->
-  <div class="metrics-grid">
-    <div class="metric-card" style="--accent-color: var(--accent-ice)">
-      <div class="metric-label">Total Accel Magnitude</div>
-      <div class="metric-value" id="metricMag">0.00</div>
-      <div class="metric-unit">G-force (filtered)</div>
-    </div>
-    <div class="metric-card" style="--accent-color: var(--accent-amber)">
-      <div class="metric-label">Peak Angular Vel.</div>
-      <div class="metric-value" id="metricGyro">0.0</div>
-      <div class="metric-unit">°/s (jump peak)</div>
-    </div>
-    <div class="metric-card" style="--accent-color: var(--accent-lime)">
-      <div class="metric-label">Airtime Counter</div>
-      <div class="metric-value" id="metricAirtime">0</div>
-      <div class="metric-unit">seconds</div>
-    </div>
-    <div class="metric-card" style="--accent-color: var(--accent-hot)">
-      <div class="metric-label">Jump Count</div>
-      <div class="metric-value large" id="metricJumps">0</div>
-      <div class="metric-unit">session total</div>
-    </div>
+  <!-- STATE BAR -->
+  <div class="state-bar rivet-panel">
+    <div class="r-tl"></div><div class="r-tr"></div>
+    <div class="r-bl"></div><div class="r-br"></div>
+    <div class="state-seg active-ground" id="seg0">Ground</div>
+    <div class="state-seg" id="seg1">Airborne</div>
+    <div class="state-seg" id="seg2">Impact</div>
   </div>
 
-  <!-- WAVEFORM -->
-  <div class="panel">
-    <div class="panel-header">
-      <div class="panel-title">Live Signal — Filtered Acceleration Magnitude</div>
-      <div style="display:flex;gap:12px;align-items:center">
-        <span class="tag" id="filterTag">LPF α=0.15</span>
-        <span class="panel-tag" id="sampleRate">0 Hz</span>
+  <!-- GAUGE ROW -->
+  <div class="gauge-row">
+
+    <!-- G-FORCE GAUGE -->
+    <div class="gauge-housing rivet-panel">
+      <div class="r-tl"></div><div class="r-tr"></div>
+      <div class="r-bl"></div><div class="r-br"></div>
+      <div class="gauge-label">G-Force</div>
+      <div class="gauge-svg-wrap">
+        <svg viewBox="0 0 140 95" width="140" height="95">
+          <defs>
+            <radialGradient id="dialBg" cx="50%" cy="90%" r="70%">
+              <stop offset="0%" stop-color="#1c1600"/>
+              <stop offset="100%" stop-color="#060400"/>
+            </radialGradient>
+            <filter id="needleGlow" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="2" result="blur"/>
+              <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+            <filter id="arcGlow" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="2.5" result="blur"/>
+              <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+          </defs>
+          <path d="M 8 88 A 62 62 0 0 1 132 88" fill="url(#dialBg)" stroke="#3a2e08" stroke-width="1.5"/>
+          <path d="M 4 88 A 66 66 0 0 1 136 88" fill="none" stroke="#5a4010" stroke-width="2"/>
+          <!-- Arc zones -->
+          <path d="M 12 88 A 58 58 0 0 1 44 38" fill="none" stroke="#a8c820" stroke-width="6" stroke-linecap="butt" opacity="0.75" filter="url(#arcGlow)"/>
+          <path d="M 44 38 A 58 58 0 0 1 96 38" fill="none" stroke="#f0a800" stroke-width="6" stroke-linecap="butt" opacity="0.75" filter="url(#arcGlow)"/>
+          <path d="M 96 38 A 58 58 0 0 1 128 88" fill="none" stroke="#e84820" stroke-width="6" stroke-linecap="butt" opacity="0.80" filter="url(#arcGlow)"/>
+          <!-- Major ticks -->
+          <g stroke="#c8a820" stroke-width="1.5">
+            <line x1="70" y1="28" x2="70" y2="38" transform="rotate(-90 70 88)"/>
+            <line x1="70" y1="28" x2="70" y2="38" transform="rotate(-54 70 88)"/>
+            <line x1="70" y1="28" x2="70" y2="38" transform="rotate(-18 70 88)"/>
+            <line x1="70" y1="28" x2="70" y2="38" transform="rotate(18 70 88)"/>
+            <line x1="70" y1="28" x2="70" y2="38" transform="rotate(54 70 88)"/>
+            <line x1="70" y1="28" x2="70" y2="38" transform="rotate(90 70 88)"/>
+          </g>
+          <!-- Minor ticks -->
+          <g stroke="#7a5808" stroke-width="1">
+            <line x1="70" y1="30" x2="70" y2="38" transform="rotate(-72 70 88)"/>
+            <line x1="70" y1="30" x2="70" y2="38" transform="rotate(-36 70 88)"/>
+            <line x1="70" y1="30" x2="70" y2="38" transform="rotate(0 70 88)"/>
+            <line x1="70" y1="30" x2="70" y2="38" transform="rotate(36 70 88)"/>
+            <line x1="70" y1="30" x2="70" y2="38" transform="rotate(72 70 88)"/>
+          </g>
+          <!-- Labels -->
+          <text x="9"   y="85" font-family="Share Tech Mono" font-size="7" fill="#c8a820" text-anchor="middle">0</text>
+          <text x="28"  y="50" font-family="Share Tech Mono" font-size="7" fill="#c8a820" text-anchor="middle">1</text>
+          <text x="70"  y="24" font-family="Share Tech Mono" font-size="7" fill="#c8a820" text-anchor="middle">2</text>
+          <text x="112" y="50" font-family="Share Tech Mono" font-size="7" fill="#c8a820" text-anchor="middle">3</text>
+          <text x="131" y="85" font-family="Share Tech Mono" font-size="7" fill="#c8a820" text-anchor="middle">5</text>
+          <!-- Needle — tapered, pivots at (70,88) via SVG transform -->
+          <g id="gNeedle" transform="rotate(-90 70 88)">
+            <polygon points="70,92 68,98 70,101 72,98" fill="#6a4808"/>
+            <polygon points="70,88 69,82 70,30 71,82" fill="#f0a800" filter="url(#needleGlow)"/>
+            <circle cx="70" cy="88" r="5.5" fill="#1c1600" stroke="#c8a820" stroke-width="1.5"/>
+            <circle cx="70" cy="88" r="2"   fill="#f0c840"/>
+          </g>
+          <!-- Readout box -->
+          <rect x="46" y="66" width="48" height="15" rx="2" fill="#080600" stroke="#3a2e08" stroke-width="1"/>
+          <text id="gText" x="70" y="77" text-anchor="middle" font-family="Share Tech Mono" font-size="9" fill="#f0c840">1.00G</text>
+        </svg>
       </div>
     </div>
-    <canvas id="waveform"></canvas>
-    <!-- Threshold lines drawn in canvas -->
+
+    <!-- ATTITUDE INDICATOR -->
+    <div class="gauge-housing rivet-panel" style="padding:10px 8px;">
+      <div class="r-tl"></div><div class="r-tr"></div>
+      <div class="r-bl"></div><div class="r-br"></div>
+      <div class="gauge-label">Attitude</div>
+      <canvas id="adiCanvas" width="130" height="130" style="display:block;border-radius:50%;"></canvas>
+      <div style="display:flex;justify-content:space-between;width:130px;margin-top:4px">
+        <div style="font-family:'Share Tech Mono',monospace;font-size:8px;color:#7a5808">ROLL <span id="adiRoll" style="color:#f0c840">0°</span></div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:8px;color:#7a5808">PITCH <span id="adiPitch" style="color:#f0c840">0°</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AIRTIME — NIXIE DISPLAY -->
+  <div class="airtime-housing">
+    <div class="screw tl"></div><div class="screw tr"></div>
+    <div class="screw bl"></div><div class="screw br"></div>
+    <div class="airtime-label">Airtime</div>
+    <div class="nixie" id="nixieTime">0.000<span class="unit">s</span></div>
+    <div class="airtime-sub" id="jumpCountSub">SESSION — 0 JUMPS</div>
+  </div>
+
+  <!-- STRIP CHART -->
+  <div class="strip-housing rivet-panel">
+    <div class="r-tl"></div><div class="r-tr"></div>
+    <div class="r-bl"></div><div class="r-br"></div>
+    <div class="strip-header">
+      <div class="strip-title">Accel. Magnitude — Filtered</div>
+      <div class="strip-hz" id="stripHz">0 Hz</div>
+    </div>
+    <canvas id="analogWave"></canvas>
   </div>
 
   <!-- CONTROLS -->
   <div class="controls">
-    <button class="btn btn-primary" id="btnEnable">Enable Sensors</button>
-    <button class="btn btn-primary" id="btnSimulate">▶ Simulate Ride</button>
-    <button class="btn btn-danger" id="btnStop" disabled>■ Stop</button>
-    <button class="btn btn-ghost" id="btnClear">Clear Log</button>
-  </div>
-
-  <!-- CONFIGURATION -->
-  <div class="panel">
-    <div class="panel-header">
-      <div class="panel-title">Signal Processing Config</div>
-    </div>
-    <div class="config-grid">
-      <div class="config-item">
-        <label>LPF Alpha (smoothing) <span class="val" id="valAlpha">0.15</span></label>
-        <input type="range" id="cfgAlpha" min="0.02" max="0.5" step="0.01" value="0.15">
-      </div>
-      <div class="config-item">
-        <label>Freefall Threshold <span class="val" id="valFreefall">0.25 G</span></label>
-        <input type="range" id="cfgFreefall" min="0.05" max="0.6" step="0.01" value="0.25">
-      </div>
-      <div class="config-item">
-        <label>Landing Threshold <span class="val" id="valLanding">2.0 G</span></label>
-        <input type="range" id="cfgLanding" min="1.0" max="5.0" step="0.1" value="2.0">
-      </div>
-      <div class="config-item">
-        <label>Min Airtime Debounce <span class="val" id="valDebounce">250 ms</span></label>
-        <input type="range" id="cfgDebounce" min="50" max="1000" step="10" value="250">
-      </div>
-    </div>
+    <button class="btn btn-start" id="btnEnable">Enable Sensors</button>
+    <button class="btn btn-sim"   id="btnSim">▶ Simulate</button>
+    <button class="btn btn-stop"  id="btnStop" disabled>■ Stop</button>
+    <button class="btn btn-clear" id="btnClear">Clear Log</button>
   </div>
 
   <!-- JUMP LOG -->
-  <div class="panel">
-    <div class="panel-header">
-      <div class="panel-title">Jump Log & Comparison</div>
-      <div style="display:flex;gap:12px;align-items:center">
-        <span style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim)">
-          <span style="color:#4ade80">▲</span> improved &nbsp;
-          <span style="color:var(--accent-hot)">▼</span> declined
-        </span>
-        <span class="panel-tag" id="logCount">0 jumps</span>
-      </div>
+  <div class="log-housing rivet-panel">
+    <div class="r-tl"></div><div class="r-tr"></div>
+    <div class="r-bl"></div><div class="r-br"></div>
+    <div class="log-header">
+      <div class="log-title">Jump Record</div>
+      <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--border2)" id="logCount">0 JUMPS</div>
     </div>
-
-    <!-- BEST JUMP BANNER — shown after 2+ jumps -->
-    <div id="bestJumpBanner" style="display:none; padding:10px 16px; background:rgba(170,255,0,0.05); border-bottom:1px solid rgba(170,255,0,0.15);">
-      <span style="font-family:var(--font-mono);font-size:10px;color:var(--accent-lime);text-transform:uppercase;letter-spacing:0.1em">
-        🏆 Best Airtime: <span id="bestAirtime">--</span>s &nbsp;·&nbsp; Jump #<span id="bestJumpNum">--</span>
-      </span>
-    </div>
-
-    <div class="jump-log" id="jumpLog">
-      <div class="empty-state" id="emptyState">No jumps recorded — start a session</div>
-      <div id="jumpCards"></div>
+    <div class="log-scroll">
+      <div class="empty-log" id="emptyLog">Awaiting first jump</div>
+      <div id="logEntries"></div>
     </div>
   </div>
 
+</div><!-- /shell -->
 
-</div><!-- /app-shell -->
-
-<!-- ═══════════════════════════════════════════════════════════
-     JAVASCRIPT — Full signal processing engine
-═══════════════════════════════════════════════════════════ -->
 <script>
 'use strict';
 
-/* ══════════════════════════════════════════════════════════════════
-   MODULE 1: SignalProcessor
-   Handles all math — pure functions, no side effects.
-   Maps directly to the math layer you'd implement in Dart/Swift.
-══════════════════════════════════════════════════════════════════ */
-const SignalProcessor = (() => {
+/* ── Signal Processor (same math as production) ── */
+const SP = {
+  mag: (x,y,z) => Math.sqrt(x*x+y*y+z*z),
+  lpf: (s, last, a) => a*s + (1-a)*last,
+  toG: v => v / 9.81,
+};
 
-  /**
-   * Calculate Euclidean norm (3D vector magnitude).
-   * ORIENTATION-AGNOSTIC: result is the same regardless of device rotation.
-   * iOS/Swift equiv: sqrt(pow(accel.x,2) + pow(accel.y,2) + pow(accel.z,2))
-   * Dart equiv: math.sqrt(x*x + y*y + z*z)
-   *
-   * @param {number} x  Acceleration on x-axis (G or m/s²)
-   * @param {number} y  Acceleration on y-axis
-   * @param {number} z  Acceleration on z-axis
-   * @returns {number}  Total magnitude
-   */
-  function euclideanMagnitude(x, y, z) {
-    return Math.sqrt(x * x + y * y + z * z);
+/* ── State Machine ── */
+class FSM {
+  static S = { GROUND:'GROUND', AIR:'AIR', LAND:'LAND' };
+  constructor(cfg, onJump, onState) {
+    this.cfg = cfg;
+    this.onJump = onJump; this.onState = onState;
+    this._s = FSM.S.GROUND;
+    this._t0 = null; this._peakG = 0; this._peakW = 0;
+    this._fsSamples = 0; this._filtGyro = 0; this._count = 0;
   }
-
-  /**
-   * Exponential Moving Average — single-pole IIR low-pass filter.
-   *
-   * This approximates a Butterworth LPF for our purpose.
-   * Alpha controls cutoff: low alpha = aggressive smoothing (kills vibration).
-   * Engine vibration (250F: ~40-80Hz, 450F: ~30-60Hz) is eliminated while
-   * macro jump movements (0.5–3Hz) are preserved.
-   *
-   * In production Swift: use Accelerate framework vDSP_vma() for vectorized ops.
-   * In Dart: maintain a running `_filtered` state variable in isolate.
-   *
-   * @param {number} newSample   Latest raw sample
-   * @param {number} lastFiltered  Previous filtered output
-   * @param {number} alpha       Smoothing factor [0.01 .. 0.5]
-   * @returns {number} Filtered value
-   */
-  function lowPassFilter(newSample, lastFiltered, alpha) {
-    // y[n] = α·x[n] + (1−α)·y[n−1]
-    return alpha * newSample + (1 - alpha) * lastFiltered;
-  }
-
-  /**
-   * Convert raw accelerometer values (m/s²) to G-force.
-   * Web DeviceMotion API returns m/s², hardware sensors often do too.
-   * CoreMotion returns G already. Adjust per platform.
-   */
-  const MS2_TO_G = 1 / 9.81;
-  function toG(ms2) { return ms2 * MS2_TO_G; }
-
-  return { euclideanMagnitude, lowPassFilter, toG };
-})();
-
-
-/* ══════════════════════════════════════════════════════════════════
-   MODULE 2: JumpStateMachine
-   Rigid FSM with debounce, peak tracking, and immutable event emission.
-   Lifecycle: GROUND_RIDING → AIRBORNE_FREEFALL → LANDING_IMPACT → GROUND_RIDING
-══════════════════════════════════════════════════════════════════ */
-class JumpStateMachine {
-
-  // ── State enum (mirrors Dart enum / Swift enum)
-  static State = Object.freeze({
-    GROUND_RIDING:    'GROUND_RIDING',
-    AIRBORNE_FREEFALL:'AIRBORNE_FREEFALL',
-    LANDING_IMPACT:   'LANDING_IMPACT',
-  });
-
-  constructor(config, onJumpDetected, onStateChange) {
-    /**
-     * config: {
-     *   freefallThresholdG: number,   // below = airborne (default 0.25G)
-     *   landingThresholdG:  number,   // above = landing  (default 2.0G)
-     *   minAirtimeMs:       number,   // debounce          (default 250ms)
-     * }
-     */
-    this.config           = config;
-    this.onJumpDetected   = onJumpDetected; // callback(JumpEvent)
-    this.onStateChange    = onStateChange;  // callback(newState)
-
-    this._state           = JumpStateMachine.State.GROUND_RIDING;
-    this._takeoffTime     = null;   // performance.now() at takeoff
-    this._peakAngularVel  = 0;      // deg/s, tracked during flight
-    this._jumpCount       = 0;
-
-    // Gyroscope stability tracker (smooth angular velocity)
-    this._filteredGyroMag = 0;
-    this._gyroAlpha       = 0.2;    // separate LPF for gyro
-
-    // Consecutive sample counter for takeoff confirmation
-    // (requires N continuous below-threshold readings before confirming airborne)
-    this._freefallSamples = 0;
-    this._FREEFALL_CONFIRM_SAMPLES = 3; // ~50ms at 60Hz
-  }
-
-  /**
-   * Primary update — called on every sensor event (~60Hz web, 100Hz mobile).
-   * Minimize allocations here: no object creation in hot path.
-   *
-   * @param {number} filteredMagG   Filtered acceleration magnitude in G
-   * @param {number} rawGyroMagDps  Raw gyroscope magnitude in degrees/sec
-   * @param {number} timestamp      performance.now() or equivalent
-   */
-  update(filteredMagG, rawGyroMagDps, timestamp) {
-
-    // ── Smooth gyro magnitude (orientation-agnostic rotational speed)
-    this._filteredGyroMag = SignalProcessor.lowPassFilter(
-      rawGyroMagDps, this._filteredGyroMag, this._gyroAlpha
-    );
-
-    switch (this._state) {
-
-      // ─────────────────────────────────────────────────────────
-      case JumpStateMachine.State.GROUND_RIDING:
-      // ─────────────────────────────────────────────────────────
-        /**
-         * TAKEOFF CONDITION:
-         * 1. Filtered mag < freefallThreshold (phone approaching weightlessness)
-         * 2. Angular velocity is settling (no severe ground chatter)
-         *    Gyro < 200°/s confirms we're not in a washboard/whoops section
-         * 3. Must sustain N samples (debounce against single-spike false positives)
-         */
-        if (filteredMagG < this.config.freefallThresholdG &&
-            this._filteredGyroMag < 200) {
-          this._freefallSamples++;
-          if (this._freefallSamples >= this._FREEFALL_CONFIRM_SAMPLES) {
-            this._transitionTo(JumpStateMachine.State.AIRBORNE_FREEFALL, timestamp);
-            this._takeoffTime = timestamp;
-            this._peakAngularVel = 0;
-            this._freefallSamples = 0;
-          }
-        } else {
-          this._freefallSamples = 0; // reset on any non-freefall sample
-        }
+  update(mag, gyro, ts) {
+    this._filtGyro = SP.lpf(gyro, this._filtGyro, 0.2);
+    switch(this._s) {
+      case FSM.S.GROUND:
+        if (mag < this.cfg.ff && this._filtGyro < 200) {
+          if (++this._fsSamples >= 3) { this._to(FSM.S.AIR, ts); this._t0=ts; this._peakG=0; this._peakW=0; }
+        } else this._fsSamples=0;
         break;
-
-      // ─────────────────────────────────────────────────────────
-      case JumpStateMachine.State.AIRBORNE_FREEFALL:
-      // ─────────────────────────────────────────────────────────
-        /**
-         * Track peak angular velocity while airborne.
-         * This captures whips, scrubs, seat bounces — anything rotational.
-         * Raw (unfiltered) gyro used here for accurate peak detection.
-         */
-        if (rawGyroMagDps > this._peakAngularVel) {
-          this._peakAngularVel = rawGyroMagDps;
-        }
-
-        /**
-         * LANDING CONDITION:
-         * Spike above landing threshold = ground contact.
-         * No debounce needed here — the spike IS the event.
-         */
-        if (filteredMagG > this.config.landingThresholdG) {
-          this._transitionTo(JumpStateMachine.State.LANDING_IMPACT, timestamp);
-          this._handleLanding(filteredMagG, timestamp);
-        }
+      case FSM.S.AIR:
+        if (gyro > this._peakW) this._peakW = gyro;
+        if (mag > this._peakG) this._peakG = mag;
+        if (mag > this.cfg.land) { this._to(FSM.S.LAND, ts); this._doLand(mag, ts); }
         break;
-
-      // ─────────────────────────────────────────────────────────
-      case JumpStateMachine.State.LANDING_IMPACT:
-      // ─────────────────────────────────────────────────────────
-        /**
-         * Brief hold state — auto-transitions back to GROUND_RIDING
-         * once magnitude normalizes (< 1.5G). This prevents the landing
-         * impact from immediately retriggering takeoff detection.
-         */
-        if (filteredMagG < 1.5) {
-          this._transitionTo(JumpStateMachine.State.GROUND_RIDING, timestamp);
-        }
+      case FSM.S.LAND:
+        if (mag < 1.5) this._to(FSM.S.GROUND, ts);
         break;
     }
-
-    return this._state;
+    return this._s;
   }
-
-  /**
-   * Process a validated landing — emit JumpEvent if airtime passes debounce.
-   * Private method. No external callers.
-   */
-  _handleLanding(impactG, timestamp) {
-    const airtimeMs = timestamp - this._takeoffTime;
-
-    // ── DEBOUNCE FILTER: discard short false positives (whoops, step-ups)
-    if (airtimeMs < this.config.minAirtimeMs) {
-      console.debug(`[FSM] Jump discarded: airtime ${airtimeMs.toFixed(0)}ms < ${this.config.minAirtimeMs}ms threshold`);
-      return;
-    }
-
-    this._jumpCount++;
-
-    /**
-     * JUMP EVENT — Immutable data object.
-     * In Dart: @immutable class JumpEvent { final DateTime timestamp; ... }
-     * In Swift: struct JumpEvent { let timestamp: Date; ... }
-     */
-    const event = Object.freeze({
-      id:               this._jumpCount,
-      timestamp:        new Date(),
-      timestampMs:      Date.now(),
-      airtimeMs:        Math.round(airtimeMs),
-      impactG:          parseFloat(impactG.toFixed(2)),
-      peakAngularVelDps: Math.round(this._peakAngularVel),
-    });
-
-    this.onJumpDetected(event);
+  _doLand(impG, ts) {
+    const ms = ts - this._t0;
+    if (ms < this.cfg.minMs) return;
+    this._count++;
+    this.onJump(Object.freeze({ id:this._count, timestamp:new Date(), airtimeMs:Math.round(ms), impactG:parseFloat(impG.toFixed(2)), peakW:Math.round(this._peakW) }));
   }
-
-  _transitionTo(newState, timestamp) {
-    const prev = this._state;
-    this._state = newState;
-    if (prev !== newState) this.onStateChange(newState, prev);
-  }
-
-  get state() { return this._state; }
-  get jumpCount() { return this._jumpCount; }
+  _to(s, ts) { const p=this._s; this._s=s; if(p!==s) this.onState(s,p); }
+  get state() { return this._s; }
 }
 
-
-/* ══════════════════════════════════════════════════════════════════
-   MODULE 3: SensorSession
-   Lifecycle manager — sensor access, backgrounding notes, cleanup.
-   Maps to: iOS CMMotionManager, Android SensorManager + ForegroundService
-══════════════════════════════════════════════════════════════════ */
-class SensorSession {
-
-  constructor(onSensorData) {
-    this._onSensorData = onSensorData;
-    this._active       = false;
-    this._lastMotion   = null;
-    this._sampleCount  = 0;
-    this._lastHzTime   = performance.now();
-    this._currentHz    = 0;
-    this._visibilityHandler = this._onVisibilityChange.bind(this);
-
-    /**
-     * BACKGROUND EXECUTION NOTE (for mobile port):
-     *
-     * iOS Swift:
-     *   - Add UIBackgroundModes: "processing" to Info.plist
-     *   - Use CMMotionManager.startAccelerometerUpdates(to: OperationQueue())
-     *   - BGProcessingTask to extend runtime; or CMMotionActivityManager
-     *   - Keep a UIBackgroundTaskIdentifier alive via beginBackgroundTask()
-     *
-     * Android (Flutter/Kotlin):
-     *   - Create a ForegroundService with FOREGROUND_SERVICE_TYPE_LOCATION or DATA_SYNC
-     *   - Post a persistent notification (required by Android 8+)
-     *   - Register SensorEventListener in the Service, not the Activity
-     *   - Use SensorManager.registerListener() with SENSOR_DELAY_GAME (20ms)
-     *   - Flutter: use flutter_foreground_task package
-     *
-     * BATTERY OPTIMIZATION:
-     *   - Avoid object allocation in sensor callbacks (pre-allocate buffers)
-     *   - Process on a dedicated HandlerThread (Android) / serial DispatchQueue (iOS)
-     *   - Only post UI updates at ~30Hz even if sensor runs at 100Hz
-     */
+/* ── Waveform Renderer ── */
+class Wave {
+  constructor(el) {
+    this._c = el; this._ctx = el.getContext('2d');
+    this._buf = new Float32Array(300); this._h = 0;
+    this._ff = 0.25; this._land = 2.0; this._dirty = false;
+    new ResizeObserver(()=>this._resize()).observe(el.parentElement);
+    this._resize(); requestAnimationFrame(()=>this._loop());
   }
-
-  async start() {
-    if (this._active) return;
-
-    // ── Request iOS 13+ permission
-    if (typeof DeviceMotionEvent !== 'undefined' &&
-        typeof DeviceMotionEvent.requestPermission === 'function') {
-      try {
-        const perm = await DeviceMotionEvent.requestPermission();
-        if (perm !== 'granted') throw new Error('Permission denied');
-      } catch(e) {
-        throw new Error('iOS sensor permission denied: ' + e.message);
-      }
-    }
-
-    if (typeof DeviceMotionEvent === 'undefined') {
-      throw new Error('DeviceMotionEvent not supported on this platform');
-    }
-
-    this._active = true;
-
-    // ── Main sensor handler
-    // Receives: acceleration (m/s²), rotationRate (°/s), interval (s)
-    this._motionHandler = (evt) => {
-      if (!this._active) return;
-
-      const acc = evt.accelerationIncludingGravity || evt.acceleration;
-      const rot = evt.rotationRate;
-
-      if (!acc || acc.x === null) return;
-
-      // Calculate Hz
-      this._sampleCount++;
-      const now = performance.now();
-      if (now - this._lastHzTime > 1000) {
-        this._currentHz = this._sampleCount;
-        this._sampleCount = 0;
-        this._lastHzTime = now;
-      }
-
-      this._onSensorData({
-        ax: acc.x ?? 0,
-        ay: acc.y ?? 0,
-        az: acc.z ?? 0,
-        gx: rot?.alpha ?? 0,
-        gy: rot?.beta  ?? 0,
-        gz: rot?.gamma ?? 0,
-        timestamp: performance.now(),
-        hz: this._currentHz,
-      });
-    };
-
-    window.addEventListener('devicemotion', this._motionHandler, { passive: true });
-    document.addEventListener('visibilitychange', this._visibilityHandler);
-  }
-
-  stop() {
-    if (!this._active) return;
-    this._active = false;
-    if (this._motionHandler) {
-      window.removeEventListener('devicemotion', this._motionHandler);
-    }
-    document.removeEventListener('visibilitychange', this._visibilityHandler);
-  }
-
-  /**
-   * Web Page Visibility API — closest analog to iOS background mode on web.
-   * In production mobile, the OS background task handles this properly.
-   */
-  _onVisibilityChange() {
-    // On web we can't prevent suspension; on mobile the foreground service handles it.
-    console.info('[Session] Visibility:', document.visibilityState);
-  }
-
-  get active() { return this._active; }
-  get hz() { return this._currentHz; }
-}
-
-
-/* ══════════════════════════════════════════════════════════════════
-   MODULE 4: WaveformRenderer
-   Efficient canvas-based oscilloscope. Double-buffered ring buffer.
-══════════════════════════════════════════════════════════════════ */
-class WaveformRenderer {
-
-  constructor(canvasEl) {
-    this._canvas  = canvasEl;
-    this._ctx     = canvasEl.getContext('2d');
-    this._buffer  = new Float32Array(500); // ring buffer — NO re-allocation
-    this._head    = 0;
-    this._maxSeen = 5;    // dynamic Y scale
-
-    this._rafId   = null;
-    this._dirty   = false;
-    this._freefallThreshold = 0.25;
-    this._landingThreshold  = 2.0;
-
-    // Resize observer for responsive canvas
-    const ro = new ResizeObserver(() => this._resize());
-    ro.observe(canvasEl.parentElement);
-    this._resize();
-
-    this._startRenderLoop();
-  }
-
-  push(value) {
-    this._buffer[this._head % this._buffer.length] = value;
-    this._head++;
-    if (value > this._maxSeen) this._maxSeen = value;
-    this._dirty = true;
-  }
-
-  setThresholds(ff, land) {
-    this._freefallThreshold = ff;
-    this._landingThreshold  = land;
-    this._dirty = true;
-  }
-
+  push(v) { this._buf[this._h++ % this._buf.length]=v; this._dirty=true; }
   _resize() {
-    const el = this._canvas;
-    const w = el.parentElement.clientWidth;
-    el.width  = w * window.devicePixelRatio;
-    el.height = 120 * window.devicePixelRatio;
-    el.style.width  = w + 'px';
-    el.style.height = '120px';
-    this._dirty = true;
+    const dpr=window.devicePixelRatio||1, p=this._c.parentElement;
+    this._c.width=p.clientWidth*dpr; this._c.height=90*dpr;
+    this._c.style.width=p.clientWidth+'px'; this._c.style.height='90px';
+    this._dirty=true;
+  }
+  _loop() { if(this._dirty){this._draw();this._dirty=false;} requestAnimationFrame(()=>this._loop()); }
+  _draw() {
+    const ctx=this._ctx, W=this._c.width, H=this._c.height, dpr=window.devicePixelRatio||1;
+    const PAD=6*dpr, DH=H-PAD*2;
+    ctx.clearRect(0,0,W,H);
+    // Dark warm background with subtle grid
+    ctx.fillStyle='#0c0b06'; ctx.fillRect(0,0,W,H);
+    // Horizontal graph lines (ice, very dim)
+    ctx.strokeStyle='rgba(46,61,80,0.4)'; ctx.lineWidth=1;
+    for(let i=1;i<4;i++){const y=PAD+DH/4*i;ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+    const N=this._buf.length, len=Math.min(this._h,N), yMax=Math.max(4,this._land*1.4);
+    const ys=DH/yMax;
+    // Threshold lines — etched look
+    const ffy=PAD+DH-this._ff*ys, ldy=PAD+DH-this._land*ys;
+    ctx.strokeStyle='rgba(96,200,64,0.35)'; ctx.setLineDash([3*dpr,5*dpr]); ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(0,ffy);ctx.lineTo(W,ffy);ctx.stroke();
+    ctx.strokeStyle='rgba(232,64,48,0.4)'; ctx.setLineDash([3*dpr,3*dpr]);
+    ctx.beginPath();ctx.moveTo(0,ldy);ctx.lineTo(W,ldy);ctx.stroke();
+    ctx.setLineDash([]);
+    if(len<2) return;
+    // Cold titanium trace — precision instrument
+    ctx.shadowColor='rgba(240,168,0,0.55)'; ctx.shadowBlur=4*dpr;
+    ctx.strokeStyle='#e09000'; ctx.lineWidth=1.2*dpr; ctx.lineJoin='round';
+    ctx.beginPath();
+    for(let i=0;i<len;i++){
+      const bi=(this._h-len+i)%N, v=this._buf[(bi+N)%N];
+      const x=(i/(N-1))*W, y=PAD+DH-Math.min(v*ys,DH);
+      i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    }
+    ctx.stroke(); ctx.shadowBlur=0;
+    // Labels
+    ctx.fillStyle='rgba(168,200,32,0.55)'; ctx.font=`${8*dpr}px Share Tech Mono`;
+    ctx.fillText(`${this._ff}G`,4*dpr,ffy-3*dpr);
+    ctx.fillStyle='rgba(232,64,48,0.55)';
+    ctx.fillText(`${this._land}G`,4*dpr,ldy-3*dpr);
+  }
+}
+
+/* ── Simulator ── */
+class Sim {
+  constructor(cb) { this._cb=cb; this._id=null; this._pt=0; this._ph='ride'; this._pht=0; this._nextT=this._rideT(); }
+  _rideT(){return 2000+Math.random()*2500;} _airT(){return 400+Math.random()*700;}
+  start(){let last=performance.now();const t=()=>{const now=performance.now();this._pt+=now-last;this._pht+=now-last;last=now;this._cb(this._frame(now));this._id=requestAnimationFrame(t);};this._id=requestAnimationFrame(t);}
+  stop(){if(this._id)cancelAnimationFrame(this._id);this._id=null;this._ph='ride';this._pht=0;this._nextT=this._rideT();}
+  _frame(now){
+    const n=()=>(Math.random()-.5)*2.5*9.81, t=()=>(Math.random()-.5)*0.8*9.81;
+    let ax,ay,az,gx,gy,gz;
+    switch(this._ph){
+      case 'ride': ax=9.81+n()*.4+t();ay=n()*.3;az=n()*.3;gx=(Math.random()-.5)*60;gy=(Math.random()-.5)*40;gz=(Math.random()-.5)*40;if(this._pht>this._nextT)this._next('takeoff');break;
+      case 'takeoff':{const r=this._pht/200;ax=Math.max(.05,1-r*4.5)*9.81+n()*.1;ay=n()*.05;az=n()*.05;gx=(Math.random()-.5)*80;gy=(Math.random()-.5)*60;gz=(Math.random()-.5)*60;if(this._pht>200)this._next('air');break;}
+      case 'air':{const ap=this._pht/this._nextT,w=Math.sin(ap*Math.PI)*3;ax=(.05+(Math.random()-.5)*.06)*9.81;ay=(Math.random()-.5)*.04*9.81;az=(Math.random()-.5)*.04*9.81;gx=w*120+(Math.random()-.5)*20;gy=w*80+(Math.random()-.5)*15;gz=w*60+(Math.random()-.5)*15;if(this._pht>this._nextT)this._next('impact');break;}
+      case 'impact':{const r=Math.max(0,1-this._pht/80),m=(3.5+Math.random()*2.5)*9.81;ax=m*r;ay=(Math.random()-.5)*m*.3*r;az=(Math.random()-.5)*m*.3*r;gx=(Math.random()-.5)*200*r;gy=(Math.random()-.5)*150*r;gz=(Math.random()-.5)*100*r;if(this._pht>150)this._next('settle');break;}
+      case 'settle': ax=9.81*.9+n()*.3;ay=n()*.2;az=n()*.2;gx=(Math.random()-.5)*50;gy=(Math.random()-.5)*40;gz=(Math.random()-.5)*40;if(this._pht>500)this._next('ride');break;
+    }
+    return{ax,ay,az,gx,gy,gz,timestamp:now,hz:60};
+  }
+  _next(ph){this._ph=ph;this._pht=0;if(ph==='ride')this._nextT=this._rideT();if(ph==='air')this._nextT=this._airT();}
+}
+
+/* ── Attitude Indicator (ADI) ──
+   Retro aircraft artificial horizon.
+   - Sky (amber-tinted) above horizon, ground (dark brown) below.
+   - Horizon line rolls with bank angle (gx integrated) and
+     translates vertically with pitch (gy integrated).
+   - Fixed aircraft reference symbol in centre.
+   - Roll graduation marks on outer bezel ring.
+   - Integrates gyro rates over time, with auto-level when stationary.
+*/
+class AttitudeIndicator {
+  constructor(canvasId) {
+    this._canvasId = canvasId;
+    this._c    = null;
+    this._ctx  = null;
+    this._roll  = 0;
+    this._pitch = 0;
+    this._lastT = performance.now();
+    this._rollVel  = 0;
+    this._pitchVel = 0;
   }
 
-  _startRenderLoop() {
-    const loop = () => {
-      if (this._dirty) {
-        this._draw();
-        this._dirty = false;
-      }
-      this._rafId = requestAnimationFrame(loop);
-    };
-    this._rafId = requestAnimationFrame(loop);
+  _init() {
+    if (this._c) return true;
+    const el = document.getElementById(this._canvasId);
+    if (!el) return false;
+    this._c   = el;
+    this._ctx = el.getContext('2d');
+    if (!this._ctx) return false;
+    this._draw();
+    return true;
   }
 
   _draw() {
+    if (!this._c || !this._ctx) return;
     const ctx = this._ctx;
-    const W = this._canvas.width, H = this._canvas.height;
-    const dpr = window.devicePixelRatio;
-    const PAD_TOP = 8 * dpr, PAD_BOT = 8 * dpr;
-    const drawH = H - PAD_TOP - PAD_BOT;
+    const W = this._c.width;   // use actual pixel dimensions
+    const H = this._c.height;
+    const CX = W / 2, CY = H / 2;
+    const R  = Math.min(W, H) / 2 - 2;
 
     ctx.clearRect(0, 0, W, H);
 
-    // Background
-    ctx.fillStyle = '#050608';
-    ctx.fillRect(0, 0, W, H);
+    // Pitch offset in pixels — hard clamped
+    const pitchPx = Math.max(-(R*0.8), Math.min(R*0.8,
+      this._pitch * (H / 80)));
 
-    // Grid lines (subtle)
-    ctx.strokeStyle = '#1a2030';
+    // ── Sky fill (above horizon)
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(CX, CY, R, 0, Math.PI * 2);
+    ctx.clip();
+
+    // Rotate everything inside the circle by roll angle
+    ctx.translate(CX, CY);
+    ctx.rotate(this._roll * Math.PI / 180);
+    ctx.translate(-CX, -CY);
+
+    // Sky
+    ctx.fillStyle = '#0d1a30';
+    ctx.fillRect(0, 0, W, CY + pitchPx);
+
+    // Ground
+    ctx.fillStyle = '#1e0e00';
+    ctx.fillRect(0, CY + pitchPx, W, H);
+
+    // Horizon line
+    ctx.strokeStyle = '#f0c840';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, CY + pitchPx);
+    ctx.lineTo(W, CY + pitchPx);
+    ctx.stroke();
+
+    // Pitch lines
+    ctx.strokeStyle = 'rgba(240,200,64,0.45)';
     ctx.lineWidth = 1;
-    for (let i = 1; i < 4; i++) {
-      const y = PAD_TOP + (drawH / 4) * i;
-      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+    ctx.font = `${Math.round(W*0.07)}px Share Tech Mono`;
+    ctx.fillStyle = 'rgba(240,200,64,0.55)';
+    ctx.textBaseline = 'middle';
+    for (let d = -30; d <= 30; d += 10) {
+      if (d === 0) continue;
+      const y   = CY + pitchPx - d * (H / 80);
+      const len = Math.abs(d) >= 20 ? W * 0.22 : W * 0.14;
+      ctx.beginPath();
+      ctx.moveTo(CX - len, y);
+      ctx.lineTo(CX + len, y);
+      ctx.stroke();
+      ctx.fillText(Math.abs(d), CX + len + 3, y);
     }
 
-    // Max Y for scaling — adaptive
-    const yMax = Math.max(this._maxSeen * 1.1, this._landingThreshold * 1.2);
-    const yScale = drawH / yMax;
+    ctx.restore(); // un-rotate + un-clip
 
-    // ── THRESHOLD LINES
-    const ffY  = PAD_TOP + drawH - this._freefallThreshold * yScale;
-    const lndY = PAD_TOP + drawH - this._landingThreshold  * yScale;
-
-    // Freefall threshold (ice/cyan dashed)
-    ctx.strokeStyle = 'rgba(0,212,255,0.4)';
-    ctx.lineWidth = 1 * dpr;
-    ctx.setLineDash([4 * dpr, 6 * dpr]);
-    ctx.beginPath(); ctx.moveTo(0, ffY); ctx.lineTo(W, ffY); ctx.stroke();
-
-    // Landing threshold (orange dashed)
-    ctx.strokeStyle = 'rgba(255,77,26,0.5)';
-    ctx.setLineDash([4 * dpr, 4 * dpr]);
-    ctx.beginPath(); ctx.moveTo(0, lndY); ctx.lineTo(W, lndY); ctx.stroke();
-    ctx.setLineDash([]);
-
-    // ── WAVEFORM
-    const N   = this._buffer.length;
-    const len = Math.min(this._head, N);
-    if (len < 2) return;
-
-    ctx.lineWidth = 1.5 * dpr;
-    ctx.lineJoin  = 'round';
-
-    // Glow pass
-    ctx.shadowColor = 'rgba(0,212,255,0.6)';
-    ctx.shadowBlur  = 6 * dpr;
-    ctx.strokeStyle = 'rgba(0,212,255,0.25)';
+    // ── Fixed aircraft symbol (never rotates)
+    const aw = W * 0.22;
+    ctx.strokeStyle = '#f0c840';
+    ctx.lineWidth = Math.max(2, W * 0.018);
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    // Left wing bar
     ctx.beginPath();
+    ctx.moveTo(CX - aw, CY);
+    ctx.lineTo(CX - aw * 0.4, CY);
+    ctx.lineTo(CX - aw * 0.4, CY + W * 0.05);
+    ctx.stroke();
+    // Right wing bar
+    ctx.beginPath();
+    ctx.moveTo(CX + aw, CY);
+    ctx.lineTo(CX + aw * 0.4, CY);
+    ctx.lineTo(CX + aw * 0.4, CY + W * 0.05);
+    ctx.stroke();
+    // Centre dot
+    ctx.fillStyle = '#f0c840';
+    ctx.beginPath();
+    ctx.arc(CX, CY, W * 0.03, 0, Math.PI * 2);
+    ctx.fill();
 
-    for (let i = 0; i < len; i++) {
-      const bufIdx = (this._head - len + i) % N;
-      const v = this._buffer[(bufIdx + N) % N];
-      const x = (i / (N - 1)) * W;
-      const y = PAD_TOP + drawH - v * yScale;
-      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-    }
+    // ── Bezel ring + roll ticks (outside clip, drawn last)
+    ctx.strokeStyle = '#5a4010';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(CX, CY, R, 0, Math.PI * 2);
     ctx.stroke();
 
-    // Main line
-    ctx.shadowBlur  = 0;
-    ctx.strokeStyle = '#00d4ff';
-    ctx.lineWidth   = 1 * dpr;
-    ctx.beginPath();
-    for (let i = 0; i < len; i++) {
-      const bufIdx = (this._head - len + i) % N;
-      const v = this._buffer[(bufIdx + N) % N];
-      const x = (i / (N - 1)) * W;
-      const y = PAD_TOP + drawH - Math.min(v * yScale, drawH);
-      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    // Roll tick marks on bezel
+    ctx.strokeStyle = '#c8a820';
+    ctx.lineWidth = 1.5;
+    for (const deg of [-60, -45, -30, -20, -10, 0, 10, 20, 30, 45, 60]) {
+      const rad   = (deg - 90) * Math.PI / 180;
+      const outer = R - 1;
+      const inner = deg % 30 === 0 ? R - 10 : R - 6;
+      ctx.beginPath();
+      ctx.moveTo(CX + Math.cos(rad) * outer, CY + Math.sin(rad) * outer);
+      ctx.lineTo(CX + Math.cos(rad) * inner, CY + Math.sin(rad) * inner);
+      ctx.stroke();
     }
-    ctx.stroke();
 
-    // Labels
-    ctx.fillStyle  = 'rgba(0,212,255,0.5)';
-    ctx.font       = `${9 * dpr}px 'Share Tech Mono', monospace`;
-    ctx.fillText(`${this._freefallThreshold.toFixed(2)}G`, 4 * dpr, ffY - 3 * dpr);
-
-    ctx.fillStyle  = 'rgba(255,77,26,0.6)';
-    ctx.fillText(`${this._landingThreshold.toFixed(1)}G`, 4 * dpr, lndY - 3 * dpr);
+    // Roll pointer triangle (rotates with bank)
+    const rRad = (this._roll - 90) * Math.PI / 180;
+    const tDist = R - 14;
+    ctx.save();
+    ctx.translate(CX + Math.cos(rRad) * tDist, CY + Math.sin(rRad) * tDist);
+    ctx.rotate(this._roll * Math.PI / 180);
+    ctx.fillStyle = '#f0a800';
+    ctx.beginPath();
+    ctx.moveTo(0, -5);
+    ctx.lineTo(-4, 4);
+    ctx.lineTo(4, 4);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
   }
 
-  destroy() {
-    if (this._rafId) cancelAnimationFrame(this._rafId);
+/* ── G gauge angle helper ── */
+// -90deg = 0G, 0deg = 2.5G, +90deg = 5G
+function gToAngle(g) { return Math.min(90, Math.max(-90, (g/5)*180 - 90)); }
+
+   Spring-damper system: needle overshoots target then bounces back.
+   Each needle has: current angle, velocity, target angle.
+   Parameters tuned to feel like a real VDO/Smiths gauge needle.
+*/
+class InertialNeedle {
+  constructor(elId) {
+    this._el       = document.getElementById(elId);
+    this._angle    = -90;   // current rendered angle
+    this._velocity = 0;     // deg/frame
+    this._target   = -90;   // where needle wants to go
+    this._spring   = 0.18;  // stiffness  — higher = snappier
+    this._damping  = 0.72;  // damping    — lower = more bounce
+    this._drift    = 0;     // idle micro-vibration offset
+    this._driftT   = 0;     // drift time accumulator
+    this._lastRaf  = null;
+    this._lastTime = performance.now();
+    this._running  = false;
   }
-}
 
-
-/* ══════════════════════════════════════════════════════════════════
-   MODULE 5: JumpSimulator
-   Generates realistic synthetic sensor data for desktop testing.
-   Mimics: Takeoff → freefall → midair rotation → landing impact
-══════════════════════════════════════════════════════════════════ */
-class JumpSimulator {
-
-  constructor(onFrame) {
-    this._onFrame = onFrame;
-    this._id      = null;
-    this._t       = 0;
-    this._phase   = 'riding';
-    this._phaseT  = 0;
-    this._PHASES  = ['riding', 'takeoff', 'air', 'impact', 'settle'];
-    this._phaseIdx = 0;
-    this._ridingDuration    = () => 2000 + Math.random() * 3000;
-    this._airtimeDuration   = () => 400 + Math.random() * 800;
-    this._nextPhaseTime     = this._ridingDuration();
-  }
+  setTarget(angle) { this._target = angle; }
 
   start() {
-    if (this._id) return;
-    let lastTime = performance.now();
-
-    const tick = () => {
-      const now = performance.now();
-      const dt  = now - lastTime;
-      lastTime  = now;
-      this._t  += dt;
-      this._phaseT += dt;
-
-      const data = this._generateFrame(now);
-      this._onFrame(data);
-      this._id = requestAnimationFrame(tick);
-    };
-    this._id = requestAnimationFrame(tick);
+    if (this._running) return;
+    this._running = true;
+    this._tick();
   }
 
-  stop() {
-    if (this._id) { cancelAnimationFrame(this._id); this._id = null; }
-    this._phase = 'riding'; this._phaseT = 0; this._nextPhaseTime = this._ridingDuration();
-  }
+  stop() { this._running = false; }
 
-  _generateFrame(now) {
-    // Engine vibration noise (simulates 450F ~50Hz primary)
-    const engineNoise = () => (Math.random() - 0.5) * 2.5;
-    // Track chatter (20-30Hz)
-    const trackNoise  = () => (Math.random() - 0.5) * 0.8;
+  _tick() {
+    if (!this._running) return;
 
-    let ax, ay, az, gx, gy, gz;
+    const now = performance.now();
+    const dt  = Math.min((now - this._lastTime) / 16.67, 3); // normalize to 60fps frames
+    this._lastTime = now;
 
-    switch(this._phase) {
+    // ── Spring-damper physics
+    const error      = this._target - this._angle;
+    const force      = error * this._spring;
+    this._velocity   = (this._velocity + force) * this._damping;
+    this._angle     += this._velocity * dt;
 
-      case 'riding':
-        // Normal riding: ~1G total (gravity), engine + track vibration on top
-        ax = 1.0 + engineNoise() * 0.4 + trackNoise();
-        ay = engineNoise() * 0.3;
-        az = engineNoise() * 0.3;
-        gx = (Math.random()-0.5)*60; gy = (Math.random()-0.5)*40; gz = (Math.random()-0.5)*40;
-        if (this._phaseT > this._nextPhaseTime) this._nextPhase('takeoff');
-        break;
-
-      case 'takeoff':
-        // Brief compression then launch: mag spikes then drops fast
-        const tRatio = this._phaseT / 200;
-        ax = Math.max(0.05, 1.0 - tRatio * 4.5) + engineNoise() * 0.1;
-        ay = engineNoise() * 0.05;
-        az = engineNoise() * 0.05;
-        gx = (Math.random()-0.5)*80; gy=(Math.random()-0.5)*60; gz=(Math.random()-0.5)*60;
-        if (this._phaseT > 200) this._nextPhase('air');
-        break;
-
-      case 'air':
-        // Freefall + whip: very low G, high angular velocity
-        const airProgress = this._phaseT / this._airtimeDuration();
-        // Whip peaks mid-air
-        const whipFactor = Math.sin(airProgress * Math.PI) * 3;
-        ax = 0.05 + (Math.random()-0.5)*0.06;
-        ay = (Math.random()-0.5)*0.04;
-        az = (Math.random()-0.5)*0.04;
-        gx = whipFactor * 120 + (Math.random()-0.5)*20;
-        gy = whipFactor * 80  + (Math.random()-0.5)*15;
-        gz = whipFactor * 60  + (Math.random()-0.5)*15;
-        if (this._phaseT > this._nextPhaseTime) this._nextPhase('impact');
-        break;
-
-      case 'impact':
-        // Massive G spike on landing
-        const impRatio = Math.max(0, 1 - this._phaseT / 80);
-        const impactMag = 3.5 + Math.random() * 2.5;
-        ax = impactMag * impRatio;
-        ay = (Math.random()-0.5)*impactMag * 0.3 * impRatio;
-        az = (Math.random()-0.5)*impactMag * 0.3 * impRatio;
-        gx = (Math.random()-0.5)*200*impRatio; gy=(Math.random()-0.5)*150*impRatio; gz=(Math.random()-0.5)*100*impRatio;
-        if (this._phaseT > 150) this._nextPhase('settle');
-        break;
-
-      case 'settle':
-        // Riding out the landing
-        ax = 0.9 + engineNoise() * 0.3;
-        ay = engineNoise() * 0.2; az = engineNoise() * 0.2;
-        gx=(Math.random()-0.5)*50; gy=(Math.random()-0.5)*40; gz=(Math.random()-0.5)*40;
-        if (this._phaseT > 500) this._nextPhase('riding');
-        break;
+    // ── Idle drift — random micro-vibration simulating engine harmonics
+    // Only active when needle is near settled (velocity low)
+    if (Math.abs(this._velocity) < 0.5) {
+      this._driftT += dt * 0.04;
+      // Layered sine waves at different frequencies = organic feel
+      this._drift = Math.sin(this._driftT * 2.3) * 0.4
+                  + Math.sin(this._driftT * 5.1) * 0.2
+                  + Math.sin(this._driftT * 11.7) * 0.1;
+    } else {
+      this._drift *= 0.85; // fade drift when moving
     }
 
-    // Convert to m/s² for consistency with DeviceMotionEvent
-    const G = 9.81;
-    return { ax: ax*G, ay: ay*G, az: az*G, gx, gy, gz, timestamp: now, hz: 60 };
-  }
+    const rendered = this._angle + this._drift;
+    // Use SVG transform attribute — works correctly on all browsers
+    // Pivot point matches SVG needle geometry: (70, 88)
+    this._el.setAttribute('transform', `rotate(${rendered} 70 88)`);
 
-  _nextPhase(phase) {
-    this._phase = phase;
-    this._phaseT = 0;
-    if (phase === 'riding') this._nextPhaseTime = this._ridingDuration();
-    if (phase === 'air')    this._nextPhaseTime = this._airtimeDuration();
+    requestAnimationFrame(() => this._tick());
   }
 }
 
-
-/* ══════════════════════════════════════════════════════════════════
-   MODULE 6: App — wires everything together
-══════════════════════════════════════════════════════════════════ */
-class App {
-
-  constructor() {
-    // ── Config (driven by sliders)
-    this.config = {
-      alpha:              0.15,
-      freefallThresholdG: 0.25,
-      landingThresholdG:  2.0,
-      minAirtimeMs:       250,
-    };
-
-    // ── Signal state (no allocations in hot path — primitive vars)
-    this._filteredMag = 1.0;
-    this._jumps = [];
-
-    // ── Instantiate modules
-    this._fsm = new JumpStateMachine(
-      this.config,
-      this._onJump.bind(this),
-      this._onStateChange.bind(this)
-    );
-
-    this._waveform = new WaveformRenderer(document.getElementById('waveform'));
-    this._session  = null;
-    this._sim      = null;
-    this._mode     = 'idle'; // 'idle' | 'real' | 'sim'
-
-    // ── UI refs
-    this._ui = {
-      stateNodes:    {
-        GROUND_RIDING:    document.getElementById('stateGround'),
-        AIRBORNE_FREEFALL:document.getElementById('stateAirborne'),
-        LANDING_IMPACT:   document.getElementById('stateLanding'),
-      },
-      metricMag:     document.getElementById('metricMag'),
-      metricGyro:    document.getElementById('metricGyro'),
-      metricAirtime: document.getElementById('metricAirtime'),
-      metricJumps:   document.getElementById('metricJumps'),
-      sampleRate:    document.getElementById('sampleRate'),
-      filterTag:     document.getElementById('filterTag'),
-      logCount:      document.getElementById('logCount'),
-      jumpCards:     document.getElementById('jumpCards'),
-      bestJumpBanner:document.getElementById('bestJumpBanner'),
-      bestAirtime:   document.getElementById('bestAirtime'),
-      bestJumpNum:   document.getElementById('bestJumpNum'),
-      emptyState:    document.getElementById('emptyState'),
-      btnEnable:     document.getElementById('btnEnable'),
-      btnSimulate:   document.getElementById('btnSimulate'),
-      btnStop:       document.getElementById('btnStop'),
-      btnClear:      document.getElementById('btnClear'),
-      accelBadge:    document.getElementById('accelBadge'),
-      gyroBadge:     document.getElementById('gyroBadge'),
-      sessionBadge:  document.getElementById('sessionBadge'),
-      sessionLabel:  document.getElementById('sessionLabel'),
-      accelDot:      document.getElementById('accelDot'),
-      gyroDot:       document.getElementById('gyroDot'),
-      sessionDot:    document.getElementById('sessionDot'),
-      impactOverlay: document.getElementById('impactOverlay'),
-    };
-
-    // Track UI update throttling (draw at 30fps max)
-    this._lastUiUpdate = 0;
-    this._currentGyroMag = 0;
-    this._airtimeInterval = null;
-
-    this._bindEvents();
-    this._updateStateUI(JumpStateMachine.State.GROUND_RIDING);
+/* ── Odometer Roll-up ──
+   Animates numeric digits rolling up like a mechanical counter.
+   Each digit column slides vertically to the new value.
+*/
+class Odometer {
+  constructor(el, digits = 5) {
+    this._el     = el;
+    this._digits = digits;
+    this._value  = null;
+    this._render('0.000');
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // SENSOR DATA PIPELINE — hot path
-  // Called ~60Hz. Keep allocations to ZERO here.
-  // ─────────────────────────────────────────────────────────────
-  _processSensorFrame(frame) {
-    const SP = SignalProcessor;
+  setValue(str) {
+    if (str === this._value) return;
+    this._value = str;
+    this._render(str);
+  }
 
-    // 1. Euclidean magnitude of raw accelerometer (m/s²)
-    const rawMagMs2 = SP.euclideanMagnitude(frame.ax, frame.ay, frame.az);
+  _render(str) {
+    this._el.innerHTML = '';
+    for (const ch of str) {
+      const wrap = document.createElement('div');
+      wrap.className = 'odometer-wrap';
 
-    // 2. Convert to G
-    const rawMagG = SP.toG(rawMagMs2);
+      if (ch === '.' || ch === 's') {
+        // Static character — no animation
+        const sep = document.createElement('span');
+        sep.textContent = ch;
+        sep.style.cssText = 'display:inline-block;';
+        this._el.appendChild(sep);
+        continue;
+      }
 
-    // 3. Low-pass filter — kill engine vibration, preserve macro motion
-    this._filteredMag = SP.lowPassFilter(rawMagG, this._filteredMag, this.config.alpha);
+      const digit = parseInt(ch);
+      const col   = document.createElement('div');
+      col.className = 'odometer-digit';
 
-    // 4. Gyro magnitude (orientation-agnostic rotational speed)
-    const gyroMag = SP.euclideanMagnitude(frame.gx, frame.gy, frame.gz);
-    this._currentGyroMag = gyroMag;
+      // Stack 0–9 vertically, position to show target digit
+      for (let i = 0; i <= 9; i++) {
+        const s = document.createElement('span');
+        s.textContent = i;
+        col.appendChild(s);
+      }
 
-    // 5. Feed state machine
-    const state = this._fsm.update(this._filteredMag, gyroMag, frame.timestamp);
-
-    // 6. Feed waveform ring buffer (every frame, no skip)
-    this._waveform.push(this._filteredMag);
-
-    // 7. Throttled UI update (30fps cap to avoid layout thrashing)
-    const now = performance.now();
-    if (now - this._lastUiUpdate > 33) {
-      this._lastUiUpdate = now;
-      this._updateLiveUI(frame.hz, state);
+      // Animate to target digit
+      col.style.transform = `translateY(-${digit * 1.1}em)`;
+      wrap.appendChild(col);
+      this._el.appendChild(wrap);
     }
   }
+}
 
-  _updateLiveUI(hz, state) {
-    this._ui.metricMag.textContent  = this._filteredMag.toFixed(2);
-    this._ui.sampleRate.textContent = hz ? `${hz} Hz` : '…';
+/* ── App ── */
+class App {
+  constructor() {
+    this._filtMag = 1; this._jumps = []; this._sampleCount = 0;
+    this._lastHz = 0; this._lastHzTime = performance.now();
+    this._airtimeRaf = null;
 
-    // Airtime live counter
-    if (state === JumpStateMachine.State.AIRBORNE_FREEFALL && this._fsm._takeoffTime) {
-      const elapsed = performance.now() - this._fsm._takeoffTime;
-      this._ui.metricAirtime.textContent = (elapsed / 1000).toFixed(3);
-      if (this._currentGyroMag > parseFloat(this._ui.metricGyro.textContent)) {
-        this._ui.metricGyro.textContent = Math.round(this._currentGyroMag);
+    this._wave = new Wave(document.getElementById('analogWave'));
+    this._fsm  = new FSM(
+      { ff:0.25, land:2.0, minMs:250 },
+      e => this._onJump(e),
+      s => this._onState(s)
+    );
+    this._session = null; this._sim = null;
+
+    // ── Inertial needle for G-force gauge
+    this._gNeedle = new InertialNeedle('gNeedle');
+    this._gNeedle.start();
+
+    // ── Attitude Indicator — lazy init on first update
+    this._adi = new AttitudeIndicator('adiCanvas');
+
+    // ── Odometer for nixie airtime display
+    this._odometer = new Odometer(document.getElementById('nixieTime'));
+
+    document.getElementById('btnEnable').addEventListener('click', () => this._startReal());
+    document.getElementById('btnSim').addEventListener('click',    () => this._startSim());
+    document.getElementById('btnStop').addEventListener('click',   () => this._stop());
+    document.getElementById('btnClear').addEventListener('click',  () => this._clear());
+
+    this._lastUi = 0;
+  }
+
+  _frame(f) {
+    const rawMag = SP.toG(SP.mag(f.ax, f.ay, f.az));
+    this._filtMag = SP.lpf(rawMag, this._filtMag, 0.15);
+    const gyroMag = SP.mag(f.gx, f.gy, f.gz);
+
+    this._sampleCount++;
+    const now = performance.now();
+    if (now - this._lastHzTime > 1000) {
+      this._lastHz = this._sampleCount; this._sampleCount = 0; this._lastHzTime = now;
+    }
+
+    this._fsm.update(this._filtMag, gyroMag, f.timestamp);
+    this._wave.push(this._filtMag);
+
+    if (now - this._lastUi > 40) {
+      this._lastUi = now;
+      // G-force needle
+      this._gNeedle.setTarget(gToAngle(this._filtMag));
+      document.getElementById('gText').textContent = this._filtMag.toFixed(2)+'G';
+      // Attitude indicator — feed raw gyro axes directly
+      this._adi.update(f.gx, f.gy);
+      document.getElementById('adiRoll').textContent  = Math.round(this._adi._roll)+'°';
+      document.getElementById('adiPitch').textContent = Math.round(this._adi._pitch)+'°';
+      document.getElementById('stripHz').textContent = this._lastHz + ' Hz';
+
+      if (this._fsm.state === FSM.S.AIR && this._fsm._t0) {
+        const el = (performance.now() - this._fsm._t0) / 1000;
+        this._odometer.setValue(el.toFixed(3) + 's');
       }
     }
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // STATE MACHINE CALLBACKS
-  // ─────────────────────────────────────────────────────────────
-  _onStateChange(newState, prevState) {
-    this._updateStateUI(newState);
-
-    if (newState === JumpStateMachine.State.AIRBORNE_FREEFALL) {
-      this._ui.metricGyro.textContent = '0';
-    }
-
-    if (newState === JumpStateMachine.State.LANDING_IMPACT) {
-      this._flashImpact();
-    }
+  _onState(s) {
+    document.getElementById('seg0').className = 'state-seg' + (s===FSM.S.GROUND ? ' active-ground':'');
+    document.getElementById('seg1').className = 'state-seg' + (s===FSM.S.AIR    ? ' active-air'   :'');
+    document.getElementById('seg2').className = 'state-seg' + (s===FSM.S.LAND   ? ' active-land'  :'');
   }
 
-  _onJump(event) {
-    // Immutable event received — log it
-    this._jumps.unshift(event); // newest at top
-    this._ui.metricJumps.textContent = event.id;
-    this._ui.metricAirtime.textContent = (event.airtimeMs / 1000).toFixed(3);
-    this._ui.metricGyro.textContent = event.peakAngularVelDps;
-    this._appendJumpRow(event);
-    this._ui.logCount.textContent = `${event.id} jump${event.id !== 1 ? 's' : ''}`;
-
-    console.info('[JumpEvent]', event);
+  _onJump(e) {
+    this._jumps.unshift(e);
+    this._odometer.setValue((e.airtimeMs/1000).toFixed(3) + 's');
+    document.getElementById('jumpCountSub').textContent = `SESSION — ${e.id} JUMP${e.id!==1?'S':''}`;
+    document.getElementById('logCount').textContent = e.id + ' JUMP' + (e.id!==1?'S':'');
+    this._renderLog();
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // SESSION CONTROL
-  // ─────────────────────────────────────────────────────────────
-  async _startReal() {
-    try {
-      this._session = new SensorSession(this._processSensorFrame.bind(this));
-      await this._session.start();
-      this._mode = 'real';
-      this._setSessionActive(true, 'LIVE');
-    } catch(e) {
-      alert('Sensor error: ' + e.message + '\n\nTry the Simulate Ride button instead.');
-    }
-  }
+  _renderLog() {
+    const container = document.getElementById('logEntries');
+    document.getElementById('emptyLog').style.display = 'none';
+    container.innerHTML = '';
+    const bestMs = Math.max(...this._jumps.map(j=>j.airtimeMs));
 
-  _startSim() {
-    this._sim = new JumpSimulator(this._processSensorFrame.bind(this));
-    this._sim.start();
-    this._mode = 'sim';
-    this._setSessionActive(true, 'SIMULATING');
-  }
+    this._jumps.forEach((e, i) => {
+      const prev = this._jumps[i+1] || null;
+      const d = (curr, pv, hiGood=true) => {
+        if (!prev) return '<span class="delta-same">—</span>';
+        const diff = curr - pv;
+        if (Math.abs(diff) < 0.001) return '<span class="delta-same">=</span>';
+        const good = hiGood ? diff>0 : diff<0;
+        const cls  = good ? 'delta-up' : 'delta-down';
+        const pct  = Math.abs((diff/pv*100)).toFixed(0);
+        return `<span class="${cls}">${diff>0?'▲':'▼'}${pct}%</span>`;
+      };
 
-  _stop() {
-    if (this._session) { this._session.stop(); this._session = null; }
-    if (this._sim)     { this._sim.stop();     this._sim = null; }
-    this._mode = 'idle';
-    this._setSessionActive(false, 'IDLE');
-  }
-
-  _setSessionActive(active, label) {
-    const ui = this._ui;
-    ui.sessionLabel.textContent = label;
-
-    if (active) {
-      ui.sessionBadge.className = 'sensor-badge active';
-      ui.sessionDot.classList.add('pulse');
-      ui.accelBadge.className   = 'sensor-badge active';
-      ui.accelDot.classList.add('pulse');
-      ui.gyroBadge.className    = 'sensor-badge active';
-      ui.gyroDot.classList.add('pulse');
-      ui.btnStop.disabled       = false;
-      ui.btnEnable.disabled     = true;
-      ui.btnSimulate.disabled   = true;
-    } else {
-      ui.sessionBadge.className = 'sensor-badge inactive';
-      ui.sessionDot.classList.remove('pulse');
-      ui.accelBadge.className   = 'sensor-badge inactive';
-      ui.accelDot.classList.remove('pulse');
-      ui.gyroBadge.className    = 'sensor-badge inactive';
-      ui.gyroDot.classList.remove('pulse');
-      ui.btnStop.disabled       = true;
-      ui.btnEnable.disabled     = false;
-      ui.btnSimulate.disabled   = false;
-    }
-  }
-
-  // ─────────────────────────────────────────────────────────────
-  // UI HELPERS
-  // ─────────────────────────────────────────────────────────────
-  _updateStateUI(activeState) {
-    Object.entries(this._ui.stateNodes).forEach(([state, el]) => {
-      el.classList.toggle('active', state === activeState);
+      const el = document.createElement('div');
+      el.className = 'log-entry new-entry' + (e.airtimeMs===bestMs&&this._jumps.length>1?' is-best':'');
+      el.innerHTML = `
+        <div class="le-num">#${e.id}</div>
+        <div class="le-stat">
+          <div class="le-val" style="color:var(--ice)"}>${(e.airtimeMs/1000).toFixed(3)}s</div>
+          <div class="le-lbl">airtime</div>
+          <div class="le-delta">${d(e.airtimeMs, prev?.airtimeMs, true)}</div>
+        </div>
+        <div class="le-stat">
+          <div class="le-val" style="color:var(--red)">${e.impactG.toFixed(1)}G</div>
+          <div class="le-lbl">impact</div>
+          <div class="le-delta">${d(e.impactG, prev?.impactG, false)}</div>
+        </div>
+        <div class="le-stat">
+          <div class="le-val" style="color:var(--white-dim)">${e.peakW}°/s</div>
+          <div class="le-lbl">rotation</div>
+          <div class="le-delta">${d(e.peakW, prev?.peakW, true)}</div>
+        </div>
+        <div class="le-badge">${e.airtimeMs===bestMs&&this._jumps.length>1?'★ BEST':''}</div>
+      `;
+      container.appendChild(el);
     });
   }
 
-  _flashImpact() {
-    const overlay = this._ui.impactOverlay;
-    overlay.classList.add('flash');
-    setTimeout(() => overlay.classList.remove('flash'), 150);
-  }
-
-  _appendJumpRow(event) {
-    this._ui.emptyState.style.display = 'none';
-
-    // Ensure the cards container has the list wrapper
-    if (!this._ui.jumpCards.querySelector('.jump-cards-list')) {
-      this._ui.jumpCards.innerHTML = '<div class="jump-cards-list"></div>';
-    }
-    const list = this._ui.jumpCards.querySelector('.jump-cards-list');
-
-    // ── Get previous jump for delta calculation
-    const prev = this._jumps[1] || null; // _jumps is newest-first, current is [0]
-
-    // ── Delta helpers
-    const delta = (curr, prevVal, higherIsBetter = true) => {
-      if (!prev) return { html: '<span class="delta-same">FIRST</span>', better: null };
-      const diff = curr - prevVal;
-      const pct  = prevVal !== 0 ? ((diff / prevVal) * 100).toFixed(1) : '0';
-      const improved = higherIsBetter ? diff > 0 : diff < 0;
-      const neutral  = Math.abs(diff) < 0.001;
-      if (neutral) return { html: '<span class="delta-same">= same</span>', better: null };
-      const cls  = improved ? 'delta-up' : 'delta-down';
-      const sign = diff > 0 ? '▲' : '▼';
-      const abs  = Math.abs(diff);
-      return { html: `<span class="${cls}">${sign} ${pct}%</span>`, better: improved };
-    };
-
-    const airtimeDelta  = delta(event.airtimeMs,         prev?.airtimeMs,         true);
-    const impactDelta   = delta(event.impactG,            prev?.impactG,           false); // lower impact = better landing
-    const gyroDelta     = delta(event.peakAngularVelDps,  prev?.peakAngularVelDps, true);
-
-    // ── Best jump tracking
-    const bestMs   = Math.max(...this._jumps.map(j => j.airtimeMs));
-    const bestJump = this._jumps.find(j => j.airtimeMs === bestMs);
-    const isBest   = event.airtimeMs === bestMs && this._jumps.length > 1;
-
-    // Update best banner
-    if (this._jumps.length >= 2) {
-      this._ui.bestJumpBanner.style.display = '';
-      this._ui.bestAirtime.textContent  = (bestMs / 1000).toFixed(3);
-      this._ui.bestJumpNum.textContent  = bestJump.id;
-      // Re-render all cards to update best crown
-      this._rerenderAllCards();
-      return;
-    }
-
-    // ── Render single card (first jump)
-    this._renderCard(list, event, airtimeDelta, impactDelta, gyroDelta, false);
-  }
-
-  _rerenderAllCards() {
-    // Full re-render to update best crown and all deltas correctly
-    const list = this._ui.jumpCards.querySelector('.jump-cards-list');
-    list.innerHTML = '';
-    const bestMs = Math.max(...this._jumps.map(j => j.airtimeMs));
-
-    // _jumps is newest-first; render newest at top
-    for (let i = 0; i < this._jumps.length; i++) {
-      const event = this._jumps[i];
-      const prev  = this._jumps[i + 1] || null;
-
-      const delta = (curr, prevVal, higherIsBetter = true) => {
-        if (!prev) return { html: '<span class="delta-same">FIRST</span>', better: null };
-        const diff = curr - prevVal;
-        const pct  = prevVal !== 0 ? ((diff / prevVal) * 100).toFixed(1) : '0';
-        const improved = higherIsBetter ? diff > 0 : diff < 0;
-        const neutral  = Math.abs(diff) < 0.001;
-        if (neutral) return { html: '<span class="delta-same">= same</span>', better: null };
-        const cls  = improved ? 'delta-up' : 'delta-down';
-        const sign = diff > 0 ? '▲' : '▼';
-        return { html: `<span class="${cls}">${sign} ${Math.abs(pct)}%</span>`, better: improved };
+  async _startReal() {
+    try {
+      if (typeof DeviceMotionEvent.requestPermission === 'function') {
+        if (await DeviceMotionEvent.requestPermission() !== 'granted') throw new Error('denied');
+      }
+      this._motionCb = evt => {
+        const a = evt.accelerationIncludingGravity||evt.acceleration, r=evt.rotationRate;
+        if(!a||a.x===null) return;
+        this._frame({ax:a.x??0,ay:a.y??0,az:a.z??0,gx:r?.alpha??0,gy:r?.beta??0,gz:r?.gamma??0,timestamp:performance.now()});
       };
-
-      this._renderCard(
-        list, event,
-        delta(event.airtimeMs,        prev?.airtimeMs,        true),
-        delta(event.impactG,           prev?.impactG,          false),
-        delta(event.peakAngularVelDps, prev?.peakAngularVelDps,true),
-        event.airtimeMs === bestMs
-      );
-    }
+      window.addEventListener('devicemotion', this._motionCb, {passive:true});
+      this._setActive(true);
+    } catch(e) { alert('Sensor error: '+e.message); }
   }
 
-  _renderCard(list, event, airtimeDelta, impactDelta, gyroDelta, isBest) {
-    const quality  = this._jumpQuality(event);
-    const timeStr  = event.timestamp.toLocaleTimeString('en-US', { hour12: false });
-
-    const card = document.createElement('div');
-    card.className = `jump-card new-entry${isBest ? ' is-best' : ''}`;
-    card.innerHTML = `
-      <div class="jc-num">
-        ${isBest ? '<div class="best-crown">🏆</div>' : ''}
-        <div>#${event.id}</div>
-        <div style="font-size:9px;color:var(--text-dim)">${timeStr}</div>
-      </div>
-      <div class="jc-stat">
-        <div class="jc-label">Airtime</div>
-        <div class="jc-value" style="color:var(--accent-ice)">${(event.airtimeMs/1000).toFixed(3)}<span style="font-size:11px;opacity:0.5">s</span></div>
-        <div class="jc-delta">${airtimeDelta.html}</div>
-      </div>
-      <div class="jc-stat">
-        <div class="jc-label">Impact</div>
-        <div class="jc-value" style="color:var(--accent-hot)">${event.impactG.toFixed(1)}<span style="font-size:11px;opacity:0.5">G</span></div>
-        <div class="jc-delta">${impactDelta.html}</div>
-      </div>
-      <div class="jc-stat">
-        <div class="jc-label">Rotation</div>
-        <div class="jc-value" style="color:var(--accent-amber)">${event.peakAngularVelDps}<span style="font-size:11px;opacity:0.5">°/s</span></div>
-        <div class="jc-delta">${gyroDelta.html}</div>
-      </div>
-      <div class="jc-quality" style="color:${quality.color}">${quality.label}</div>
-    `;
-    list.prepend(card);
+  _startSim() {
+    this._sim = new Sim(f => this._frame(f));
+    this._sim.start();
+    this._setActive(true);
   }
 
-  _jumpQuality(event) {
-    // Classify jump based on airtime + rotation
-    if (event.airtimeMs > 1200 && event.peakAngularVelDps > 300) return { label: '★ WHIP',    color: 'var(--accent-hot)' };
-    if (event.airtimeMs > 1000)                                   return { label: '◆ BIG AIR', color: 'var(--accent-amber)' };
-    if (event.airtimeMs > 600  && event.peakAngularVelDps > 150)  return { label: '▲ STYLED',  color: 'var(--accent-ice)' };
-    if (event.airtimeMs > 500)                                    return { label: '● SOLID',   color: 'var(--accent-lime)' };
-    return                                                               { label: '· BASIC',   color: 'var(--text-dim)' };
+  _stop() {
+    if (this._motionCb) { window.removeEventListener('devicemotion',this._motionCb); this._motionCb=null; }
+    if (this._sim) { this._sim.stop(); this._sim=null; }
+    this._setActive(false);
   }
 
-  _clearLog() {
-    this._jumps = [];
-    this._fsm._jumpCount = 0;
-    this._ui.jumpCards.innerHTML = '';
-    this._ui.bestJumpBanner.style.display = 'none';
-    this._ui.emptyState.style.display = '';
-    this._ui.metricJumps.textContent = '0';
-    this._ui.metricAirtime.textContent = '0.000';
-    this._ui.metricGyro.textContent = '0.0';
-    this._ui.logCount.textContent = '0 jumps';
+  _clear() {
+    this._jumps = []; this._fsm._count = 0;
+    document.getElementById('logEntries').innerHTML = '';
+    document.getElementById('emptyLog').style.display = '';
+    this._odometer.setValue('0.000s');
+    document.getElementById('jumpCountSub').textContent = 'SESSION — 0 JUMPS';
+    document.getElementById('logCount').textContent = '0 JUMPS';
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // SLIDER CONFIG BINDING
-  // ─────────────────────────────────────────────────────────────
-  _bindEvents() {
-    this._ui.btnEnable.addEventListener('click', () => this._startReal());
-    this._ui.btnSimulate.addEventListener('click', () => this._startSim());
-    this._ui.btnStop.addEventListener('click', () => this._stop());
-    this._ui.btnClear.addEventListener('click', () => this._clearLog());
-
-    const bind = (id, key, display, fmt) => {
-      const el = document.getElementById(id);
-      const lbl = document.getElementById(display);
-      el.addEventListener('input', () => {
-        const v = parseFloat(el.value);
-        this.config[key] = v;
-        this._fsm.config[key] = v;
-        lbl.textContent = fmt(v);
-        if (key === 'alpha') this._ui.filterTag.textContent = `LPF α=${v.toFixed(2)}`;
-        if (key === 'freefallThresholdG' || key === 'landingThresholdG') {
-          this._waveform.setThresholds(this.config.freefallThresholdG, this.config.landingThresholdG);
-        }
-      });
-    };
-
-    bind('cfgAlpha',    'alpha',              'valAlpha',    v => v.toFixed(2));
-    bind('cfgFreefall', 'freefallThresholdG', 'valFreefall', v => `${v.toFixed(2)} G`);
-    bind('cfgLanding',  'landingThresholdG',  'valLanding',  v => `${v.toFixed(1)} G`);
-    bind('cfgDebounce', 'minAirtimeMs',        'valDebounce', v => `${Math.round(v)} ms`);
+  _setActive(on) {
+    document.getElementById('btnStop').disabled    = !on;
+    document.getElementById('btnEnable').disabled  =  on;
+    document.getElementById('btnSim').disabled     =  on;
   }
 }
 
-// ── Boot
 window.addEventListener('DOMContentLoaded', () => {
-  window._app = new App();
+  try {
+    window._app = new App();
+    // Force ADI to render immediately
+    window._app._adi._init();
+  } catch(e) {
+    console.error('App init error:', e);
+  }
 });
 </script>
 </body>
