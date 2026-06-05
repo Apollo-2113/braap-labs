@@ -861,7 +861,6 @@ class FSM {
         if (mag < this.cfg.ff) {
           if (++this._fsSamples >= 2) { this._to(FSM.S.AIR, ts); this._t0=ts; this._peakG=0; this._peakW=0; }
         } else this._fsSamples=0;
-        } else this._fsSamples=0;
         break;
       case FSM.S.AIR:
         if (gyro > this._peakW) this._peakW = gyro;
