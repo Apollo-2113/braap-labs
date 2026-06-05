@@ -620,9 +620,62 @@ canvas#analogWave {
       </div>
     </div>
 
-  </div>
+    <!-- IMPACT GAUGE — peak landing G, holds after each jump -->
+    <div class="gauge-housing">
+      <div class="gauge-label">Landing Impact</div>
+      <div class="gauge-svg-wrap">
+        <svg viewBox="0 0 160 100" width="160" height="100">
+          <defs>
+            <filter id="glow2" x="-40%" y="-40%" width="180%" height="180%">
+              <feGaussianBlur stdDeviation="2" result="blur"/>
+              <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+          </defs>
+          <path d="M 10 90 A 70 70 0 0 1 150 90" fill="url(#dialGrad)" stroke="#3a2e08" stroke-width="1.5"/>
+          <path d="M 6 90 A 74 74 0 0 1 154 90" fill="none" stroke="#5a4010" stroke-width="2"/>
+          <!-- Arc zones: green 0-2G soft, amber 2-4G medium, red 4-6G+ heavy -->
+          <path d="M 12 90 A 66 66 0 0 1 50 31" fill="none" stroke="#a8c820" stroke-width="5" stroke-linecap="butt" opacity="0.8"/>
+          <path d="M 50 31 A 66 66 0 0 1 110 31" fill="none" stroke="#f0a800" stroke-width="5" stroke-linecap="butt" opacity="0.8"/>
+          <path d="M 110 31 A 66 66 0 0 1 148 90" fill="none" stroke="#e84820" stroke-width="5" stroke-linecap="butt" opacity="0.9"/>
+          <!-- Major ticks at 0,1,2,3,4,5,6G -->
+          <g stroke="#c8a820" stroke-width="1.5">
+            <line x1="80" y1="22" x2="80" y2="34" transform="rotate(-90 80 90)"/>
+            <line x1="80" y1="22" x2="80" y2="34" transform="rotate(-60 80 90)"/>
+            <line x1="80" y1="22" x2="80" y2="34" transform="rotate(-30 80 90)"/>
+            <line x1="80" y1="22" x2="80" y2="34" transform="rotate(0 80 90)"/>
+            <line x1="80" y1="22" x2="80" y2="34" transform="rotate(30 80 90)"/>
+            <line x1="80" y1="22" x2="80" y2="34" transform="rotate(60 80 90)"/>
+            <line x1="80" y1="22" x2="80" y2="34" transform="rotate(90 80 90)"/>
+          </g>
+          <!-- Minor ticks -->
+          <g stroke="#7a5808" stroke-width="1">
+            <line x1="80" y1="26" x2="80" y2="34" transform="rotate(-75 80 90)"/>
+            <line x1="80" y1="26" x2="80" y2="34" transform="rotate(-45 80 90)"/>
+            <line x1="80" y1="26" x2="80" y2="34" transform="rotate(-15 80 90)"/>
+            <line x1="80" y1="26" x2="80" y2="34" transform="rotate(15 80 90)"/>
+            <line x1="80" y1="26" x2="80" y2="34" transform="rotate(45 80 90)"/>
+            <line x1="80" y1="26" x2="80" y2="34" transform="rotate(75 80 90)"/>
+          </g>
+          <!-- Labels -->
+          <text x="10"  y="88" font-family="Share Tech Mono" font-size="8" fill="#c8a820" text-anchor="middle">0</text>
+          <text x="26"  y="48" font-family="Share Tech Mono" font-size="7" fill="#c8a820" text-anchor="middle">2</text>
+          <text x="80"  y="18" font-family="Share Tech Mono" font-size="7" fill="#c8a820" text-anchor="middle">3</text>
+          <text x="134" y="48" font-family="Share Tech Mono" font-size="7" fill="#c8a820" text-anchor="middle">5</text>
+          <text x="150" y="88" font-family="Share Tech Mono" font-size="8" fill="#c8a820" text-anchor="middle">6</text>
+          <!-- Needle: rests at -90 (0G), sweeps red on hard landings -->
+          <g id="iNeedle" transform="rotate(-90 80 90)">
+            <polygon points="80,90 79,84 80,26 81,84" fill="#e84820" filter="url(#glow2)"/>
+            <polygon points="80,90 78,97 80,100 82,97" fill="#6a1808"/>
+            <circle cx="80" cy="90" r="6" fill="#1c1600" stroke="#c8a820" stroke-width="1.5"/>
+            <circle cx="80" cy="90" r="2.5" fill="#e84820"/>
+          </g>
+          <rect x="50" y="72" width="60" height="14" rx="2" fill="#080600" stroke="#3a2e08"/>
+          <text id="iText" x="80" y="83" text-anchor="middle" font-family="Share Tech Mono" font-size="9" fill="#f0c840">-- G</text>
+        </svg>
+      </div>
+    </div>
 
-  <!-- NIXIE ROW — Airtime + Distance -->
+  </div>
   <div class="nixie-row">
     <div class="nixie-panel">
       <div class="screw tl"></div><div class="screw tr"></div>
@@ -798,17 +851,14 @@ class Sim {
 
 /* ── Needle animation ── */
 // SVG native transform — pivot at (80,90) matches needle geometry
-// G gauge: -90deg = 0G (points left), +90deg = 5G (points right)
-function gToAngle(g) { return Math.min(90, Math.max(-90, (g / 5) * 180 - 90)); }
-// Rotation: -90deg = 0°/s, +90deg = 600°/s
-function wToAngle(w) { return Math.min(90, Math.max(-90, (w / 600) * 180 - 90)); }
+// Needle helper — SVG native transform, pivot at (80,90)
 function setNeedle(id, angleDeg) {
   document.getElementById(id).setAttribute('transform', `rotate(${angleDeg} 80 90)`);
 }
-// G gauge: -90deg = 0G, 0deg = 2.5G, +90deg = 5G
-function gToAngle(g) { return Math.min(90, Math.max(-90, (g/5)*180 - 90)); }
-// Rotation gauge: -90 = 0, +90 = 600
-function wToAngle(w) { return Math.min(90, Math.max(-90, (w/600)*180 - 90)); }
+// G gauge:      -90deg = 0G,  +90deg = 5G
+function gToAngle(g) { return Math.min(90, Math.max(-90, (g / 5) * 180 - 90)); }
+// Impact gauge: -90deg = 0G,  +90deg = 6G
+function iToAngle(g) { return Math.min(90, Math.max(-90, (g / 6) * 180 - 90)); }
 
 // Distance gauge: -90deg = 0ft, +90deg = 100ft
 
@@ -999,6 +1049,9 @@ class App {
     document.getElementById('jumpCountSub').textContent = `SESSION — ${e.id} JUMP${e.id!==1?'S':''}`;
     document.getElementById('logCount').textContent = e.id + ' JUMP' + (e.id!==1?'S':'');
     this._updateBestAirtime();
+    // Sweep impact needle to landing G, hold there
+    setNeedle('iNeedle', iToAngle(eventWithDist.impactG));
+    document.getElementById('iText').textContent = eventWithDist.impactG.toFixed(1) + 'G';
     this._renderLog();
   }
 
@@ -1086,6 +1139,8 @@ class App {
     this._lastDistFt = 0;
     document.getElementById('nixieDist').innerHTML = '--<span class="unit">ft</span>';
     document.getElementById('distSub').textContent = 'GPS NEEDED';
+    setNeedle('iNeedle', iToAngle(0));
+    document.getElementById('iText').textContent = '-- G';
     const best = document.getElementById('bestAirtimeVal');
     best.textContent = '—'; best.classList.add('empty');
   }
