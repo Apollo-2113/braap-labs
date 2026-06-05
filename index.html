@@ -506,6 +506,72 @@ canvas#analogWave {
   color: var(--white-dim);
 }
 
+/* ── DIGITAL SPEED DISPLAY ── */
+.speed-digital {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin: 8px 0 4px;
+}
+.speed-number {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 52px;
+  line-height: 1;
+  color: var(--ice);
+  text-shadow:
+    0 0 8px rgba(240,168,0,0.8),
+    0 0 20px rgba(240,168,0,0.4);
+  letter-spacing: -0.02em;
+  transition: color 0.2s;
+  min-width: 3ch;
+  text-align: right;
+}
+.speed-number.fast  { color: #e84820; text-shadow: 0 0 8px rgba(232,72,32,0.8), 0 0 20px rgba(232,72,32,0.4); }
+.speed-number.mid   { color: var(--chrome-hi); }
+.speed-unit {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 14px;
+  color: var(--chrome-dim);
+  letter-spacing: 0.1em;
+  padding-bottom: 6px;
+}
+.speed-bar-wrap {
+  width: 100%;
+  margin-top: 8px;
+}
+.speed-bar-track {
+  width: 100%;
+  height: 6px;
+  background: var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.speed-bar-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: 3px;
+  background: linear-gradient(90deg, #a8c820, #f0a800, #e84820);
+  transition: width 0.3s ease-out;
+  box-shadow: 0 0 6px rgba(240,168,0,0.5);
+}
+.speed-bar-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 3px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 8px;
+  color: var(--border2);
+}
+.speed-status {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9px;
+  color: var(--border2);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-top: 6px;
+  text-align: center;
+}
+
 /* ── BIKE TYPE TOGGLE ── */
 .bike-toggle-wrap {
   display: flex;
@@ -680,63 +746,22 @@ canvas#analogWave {
       </div>
     </div>
 
-    <!-- SPEEDOMETER — live GPS speed in mph -->
-    <div class="gauge-housing">
+    <!-- SPEED — digital display -->
+    <div class="gauge-housing" style="justify-content:center;">
       <div class="gauge-label">Speed</div>
-      <div class="gauge-svg-wrap">
-        <svg viewBox="0 0 160 100" width="160" height="100">
-          <defs>
-            <filter id="glow2" x="-40%" y="-40%" width="180%" height="180%">
-              <feGaussianBlur stdDeviation="2" result="blur"/>
-              <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-            </filter>
-          </defs>
-          <path d="M 10 90 A 70 70 0 0 1 150 90" fill="url(#dialGrad)" stroke="#3a2e08" stroke-width="1.5"/>
-          <path d="M 6 90 A 74 74 0 0 1 154 90" fill="none" stroke="#5a4010" stroke-width="2"/>
-          <!-- Arc zones: 0-30 green, 30-60 amber, 60-80 red -->
-          <path d="M 12 90 A 66 66 0 0 1 50 31" fill="none" stroke="#a8c820" stroke-width="5" stroke-linecap="butt" opacity="0.8"/>
-          <path d="M 50 31 A 66 66 0 0 1 110 31" fill="none" stroke="#f0a800" stroke-width="5" stroke-linecap="butt" opacity="0.8"/>
-          <path d="M 110 31 A 66 66 0 0 1 148 90" fill="none" stroke="#e84820" stroke-width="5" stroke-linecap="butt" opacity="0.8"/>
-          <!-- Major ticks at 0,10,20,30,40,50,60,70,80 -->
-          <g stroke="#c8a820" stroke-width="1.5">
-            <line x1="80" y1="22" x2="80" y2="34" transform="rotate(-90 80 90)"/>
-            <line x1="80" y1="22" x2="80" y2="34" transform="rotate(-67.5 80 90)"/>
-            <line x1="80" y1="22" x2="80" y2="34" transform="rotate(-45 80 90)"/>
-            <line x1="80" y1="22" x2="80" y2="34" transform="rotate(-22.5 80 90)"/>
-            <line x1="80" y1="22" x2="80" y2="34" transform="rotate(0 80 90)"/>
-            <line x1="80" y1="22" x2="80" y2="34" transform="rotate(22.5 80 90)"/>
-            <line x1="80" y1="22" x2="80" y2="34" transform="rotate(45 80 90)"/>
-            <line x1="80" y1="22" x2="80" y2="34" transform="rotate(67.5 80 90)"/>
-            <line x1="80" y1="22" x2="80" y2="34" transform="rotate(90 80 90)"/>
-          </g>
-          <!-- Minor ticks -->
-          <g stroke="#7a5808" stroke-width="1">
-            <line x1="80" y1="27" x2="80" y2="34" transform="rotate(-78.75 80 90)"/>
-            <line x1="80" y1="27" x2="80" y2="34" transform="rotate(-56.25 80 90)"/>
-            <line x1="80" y1="27" x2="80" y2="34" transform="rotate(-33.75 80 90)"/>
-            <line x1="80" y1="27" x2="80" y2="34" transform="rotate(-11.25 80 90)"/>
-            <line x1="80" y1="27" x2="80" y2="34" transform="rotate(11.25 80 90)"/>
-            <line x1="80" y1="27" x2="80" y2="34" transform="rotate(33.75 80 90)"/>
-            <line x1="80" y1="27" x2="80" y2="34" transform="rotate(56.25 80 90)"/>
-            <line x1="80" y1="27" x2="80" y2="34" transform="rotate(78.75 80 90)"/>
-          </g>
-          <!-- Labels -->
-          <text x="10"  y="88" font-family="Share Tech Mono" font-size="8" fill="#c8a820" text-anchor="middle">0</text>
-          <text x="26"  y="46" font-family="Share Tech Mono" font-size="7" fill="#c8a820" text-anchor="middle">20</text>
-          <text x="80"  y="18" font-family="Share Tech Mono" font-size="7" fill="#c8a820" text-anchor="middle">40</text>
-          <text x="134" y="46" font-family="Share Tech Mono" font-size="7" fill="#c8a820" text-anchor="middle">60</text>
-          <text x="150" y="88" font-family="Share Tech Mono" font-size="8" fill="#c8a820" text-anchor="middle">80</text>
-          <!-- Needle: sweeps live with GPS speed -->
-          <g id="sNeedle" transform="rotate(-90 80 90)">
-            <polygon points="80,90 79,84 80,26 81,84" fill="#f0a800" filter="url(#glow2)"/>
-            <polygon points="80,90 78,97 80,100 82,97" fill="#6a4808"/>
-            <circle cx="80" cy="90" r="6" fill="#1c1600" stroke="#c8a820" stroke-width="1.5"/>
-            <circle cx="80" cy="90" r="2.5" fill="#f0c840"/>
-          </g>
-          <rect x="50" y="72" width="60" height="14" rx="2" fill="#080600" stroke="#3a2e08"/>
-          <text id="sText" x="80" y="83" text-anchor="middle" font-family="Share Tech Mono" font-size="9" fill="#f0c840">-- mph</text>
-        </svg>
+      <div class="speed-digital">
+        <div class="speed-number" id="sText">--</div>
+        <div class="speed-unit">mph</div>
       </div>
+      <div class="speed-bar-wrap">
+        <div class="speed-bar-track">
+          <div class="speed-bar-fill" id="sBar"></div>
+        </div>
+        <div class="speed-bar-labels">
+          <span>0</span><span>20</span><span>40</span><span>60</span><span>80</span>
+        </div>
+      </div>
+      <div class="speed-status" id="sStatus">NO GPS</div>
     </div>
 
   </div>
@@ -1137,11 +1162,15 @@ class App {
       setNeedle('gNeedle', gToAngle(this._filtMag));
       document.getElementById('gText').textContent = this._filtMag.toFixed(2)+'G';
 
-      // Speedometer — live GPS speed
+      // Digital speedometer — live GPS
       const spd = this._gps.snapshot();
       if (spd !== null) {
-        setNeedle('sNeedle', sToAngle(spd));
-        document.getElementById('sText').textContent = Math.round(spd) + ' mph';
+        const spdR = Math.round(spd);
+        const sEl  = document.getElementById('sText');
+        sEl.textContent = spdR;
+        sEl.className   = 'speed-number' + (spd >= 50 ? ' fast' : spd >= 25 ? ' mid' : '');
+        document.getElementById('sBar').style.width = Math.min(100,(spd/80)*100)+'%';
+        document.getElementById('sStatus').textContent = spd > 1 ? 'GPS LIVE' : 'STOPPED';
       }
 
       // Distance nixie — live estimate while airborne
@@ -1386,10 +1415,14 @@ class App {
     this._sim = new Sim(
       f => this._frame(f),
       mph => {
-        // Sim drives speedometer needle directly
+        // Sim drives digital speedometer
         this._takeoffSpeedMph = mph;
-        setNeedle('sNeedle', sToAngle(mph));
-        document.getElementById('sText').textContent = Math.round(mph) + ' mph';
+        const mphR = Math.round(mph);
+        const simEl = document.getElementById('sText');
+        simEl.textContent = mphR;
+        simEl.className   = 'speed-number' + (mph >= 50 ? ' fast' : mph >= 25 ? ' mid' : '');
+        document.getElementById('sBar').style.width = Math.min(100,(mph/80)*100)+'%';
+        document.getElementById('sStatus').textContent = 'SIM';
       }
     );
     this._sim.start();
@@ -1416,8 +1449,10 @@ class App {
     this._lastDistFt = 0;
     document.getElementById('nixieDist').innerHTML = '--<span class="unit">ft</span>';
     document.getElementById('distSub').textContent = 'GPS NEEDED';
-    setNeedle('sNeedle', sToAngle(0));
-    document.getElementById('sText').textContent = '-- mph';
+    document.getElementById('sText').textContent = '--';
+    document.getElementById('sText').className = 'speed-number';
+    document.getElementById('sBar').style.width = '0%';
+    document.getElementById('sStatus').textContent = 'NO GPS';
     const best = document.getElementById('bestAirtimeVal');
     best.textContent = '—'; best.classList.add('empty');
   }
