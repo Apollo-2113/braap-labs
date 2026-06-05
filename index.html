@@ -177,12 +177,13 @@ body::after {
 }
 .best-airtime-value {
   font-family: 'Share Tech Mono', monospace;
-  font-size: 16px;
+  font-size: 13px;
   color: var(--chrome-hi);
   line-height: 1;
   text-shadow: 0 0 10px rgba(240,168,0,0.4);
+  white-space: nowrap;
 }
-.best-airtime-value.empty { color: var(--border2); font-size: 11px; }
+.best-airtime-value.empty { color: var(--border2); }
 
 
 /* ── GAUGE ROW ── */
@@ -985,12 +986,14 @@ class App {
       default:
         label.textContent = 'GPS';
         break;
-    }
   }
+
+  _updateBestAirtime() {
     if (!this._jumps.length) return;
-    const best = Math.max(...this._jumps.map(j => j.airtimeMs));
+    const bestJump = this._jumps.reduce((a, b) => a.airtimeMs > b.airtimeMs ? a : b);
     const el = document.getElementById('bestAirtimeVal');
-    el.textContent = (best / 1000).toFixed(3) + 's';
+    const distStr = bestJump.distanceFt !== null ? ` · ${bestJump.distanceFt}ft` : '';
+    el.textContent = (bestJump.airtimeMs / 1000).toFixed(3) + 's' + distStr;
     el.classList.remove('empty');
   }
 
