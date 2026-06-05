@@ -879,15 +879,18 @@ class FSM {
     this._t0 = null; this._peakG = 0; this._peakW = 0;
     this._fsSamples = 0; this._filtGyro = 0; this._count = 0;
   }
-  update(mag, rawMag, gyro, ts) {
+  update(mag, rawMag, gyro, ts, speedMph) {
     // mag = LPF filtered (good for freefall — removes engine vibration)
     // rawMag = unfiltered (good for landing — preserves impact spike)
+    // speedMph = current GPS speed for speed gate
     this._filtGyro = SP.lpf(gyro, this._filtGyro, 0.2);
     switch(this._s) {
       case FSM.S.GROUND:
-        // No gyro check — handlebar mount rotates heavily during jumps
-        // Just need magnitude to drop below freefall threshold
-        if (mag < this.cfg.ff) {
+        // Speed gate — must be moving above minimum speed to count as a jump
+        // Prevents hand wiggles and stationary false positives
+        const minSpd = this.cfg.minSpeedMph || 5;
+        const moving = (speedMph !== null && speedMph >= minSpd);
+        if (mag < this.cfg.ff && moving) {
           if (++this._fsSamples >= 4) { this._to(FSM.S.AIR, ts); this._t0=ts; this._peakG=0; this._peakW=0; }
         } else this._fsSamples=0;
         break;
@@ -942,7 +945,7 @@ class Wave {
     this._currentAirStart = null;
 
     this._ff   = 0.80;
-    this._land = 1.5;
+    this._land = 1.8;
     this._dirty = false;
 
     // Touch/drag scrubbing
@@ -1400,7 +1403,7 @@ class App {
 
     this._wave = new Wave(document.getElementById('analogWave'));
     this._fsm  = new FSM(
-      { ff:0.80, land:1.5, minMs:150 },
+      { ff:0.80, land:1.8, minMs:150, minSpeedMph:5 },
       e => this._onJump(e),
       (s, prev) => this._onState(s, prev)
     );
@@ -1435,7 +1438,8 @@ class App {
       this._lastHz = this._sampleCount; this._sampleCount = 0; this._lastHzTime = now;
     }
 
-    this._fsm.update(this._filtMag, rawMag, gyroMag, f.timestamp);
+    const currentSpeedMph = this._gps.snapshot();
+    this._fsm.update(this._filtMag, rawMag, gyroMag, f.timestamp, currentSpeedMph);
     this._wave.push(this._filtMag);
 
     if (now - this._lastUi > 40) {
@@ -1584,17 +1588,18 @@ class App {
     this._bikeType = type;
 
     const presets = {
-      electric: { ff: 0.80, land: 1.5, minMs: 150, arcFactor: 0.65,
-        label: '⚡ ELECTRIC — ff:0.80G · land:1.5G · min:150ms' },
-      gas:      { ff: 0.25, land: 2.0, minMs: 250, arcFactor: 0.85,
-        label: '🔥 GAS — ff:0.25G · land:2.0G · min:250ms' },
+      electric: { ff: 0.80, land: 1.8, minMs: 150, minSpeedMph: 5, arcFactor: 0.65,
+        label: '⚡ ELECTRIC — ff:0.80G · land:1.8G · min:150ms · minSpd:5mph' },
+      gas:      { ff: 0.25, land: 2.0, minMs: 250, minSpeedMph: 5, arcFactor: 0.85,
+        label: '🔥 GAS — ff:0.25G · land:2.0G · min:250ms · minSpd:5mph' },
     };
 
     const p = presets[type];
-    this._fsm.cfg.ff    = p.ff;
-    this._fsm.cfg.land  = p.land;
-    this._fsm.cfg.minMs = p.minMs;
-    this._arcFactor     = p.arcFactor;
+    this._fsm.cfg.ff          = p.ff;
+    this._fsm.cfg.land        = p.land;
+    this._fsm.cfg.minMs       = p.minMs;
+    this._fsm.cfg.minSpeedMph = p.minSpeedMph;
+    this._arcFactor           = p.arcFactor;
     this._wave._ff      = p.ff;
     this._wave._land    = p.land;
     this._wave._dirty   = true;
