@@ -506,6 +506,66 @@ canvas#analogWave {
   color: var(--white-dim);
 }
 
+/* ── BIKE TYPE TOGGLE ── */
+.bike-toggle-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.bike-toggle {
+  display: flex;
+  align-items: center;
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: 3px;
+  padding: 4px;
+  gap: 4px;
+  position: relative;
+  width: 100%;
+  max-width: 280px;
+}
+.bike-opt {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px;
+  background: none;
+  border: none;
+  border-radius: 2px;
+  cursor: pointer;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--border2);
+  transition: color 0.2s;
+  z-index: 1;
+  position: relative;
+}
+.bike-opt.active { color: var(--bg); }
+.bike-icon { font-size: 14px; }
+.bike-slider {
+  position: absolute;
+  top: 4px; bottom: 4px;
+  width: calc(50% - 4px);
+  left: 4px;
+  background: var(--chrome-hi);
+  border-radius: 2px;
+  transition: transform 0.25s cubic-bezier(0.34, 1.2, 0.64, 1);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+}
+.bike-slider.gas { transform: translateX(calc(100% + 4px)); }
+.bike-preset-info {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9px;
+  color: var(--chrome-dim);
+  letter-spacing: 0.1em;
+  text-align: center;
+}
+
 .empty-log {
   padding: 32px;
   text-align: center;
@@ -705,6 +765,22 @@ canvas#analogWave {
       <div class="strip-hz" id="stripHz">0 Hz</div>
     </div>
     <canvas id="analogWave"></canvas>
+  </div>
+
+  <!-- BIKE TYPE TOGGLE -->
+  <div class="bike-toggle-wrap">
+    <div class="bike-toggle" id="bikeToggle">
+      <button class="bike-opt" id="bikeElec" onclick="window._app.setBikeType('electric')">
+        <span class="bike-icon">⚡</span>
+        <span class="bike-label">Electric</span>
+      </button>
+      <div class="bike-slider" id="bikeSlider"></div>
+      <button class="bike-opt" id="bikeGas" onclick="window._app.setBikeType('gas')">
+        <span class="bike-icon">🔥</span>
+        <span class="bike-label">Gas</span>
+      </button>
+    </div>
+    <div class="bike-preset-info" id="bikePresetInfo">⚡ ELECTRIC — ff:0.40G · land:1.5G · min:150ms</div>
   </div>
 
   <!-- CONTROLS -->
@@ -1027,7 +1103,8 @@ class App {
       s => this._onState(s)
     );
     this._session = null; this._sim = null;
-    this._gps = new GpsTracker(status => this._updateGpsBadge(status));
+    this._bikeType = 'electric';
+    this.setBikeType('electric'); // apply defaults on load
     this._takeoffGpsState  = null;  // { speed, coords } snapshotted at takeoff
     this._takeoffSpeedMph  = null;  // quick access to speed for sim
     this._lastDistFt       = 0;
@@ -1128,7 +1205,35 @@ class App {
     document.getElementById('btnSim').disabled    =  on;
   }
 
-  _updateGpsBadge(status) {
+  setBikeType(type) {
+    this._bikeType = type;
+
+    const presets = {
+      electric: { ff: 0.40, land: 1.5, minMs: 150,
+        label: '⚡ ELECTRIC — ff:0.40G · land:1.5G · min:150ms' },
+      gas:      { ff: 0.25, land: 2.0, minMs: 250,
+        label: '🔥 GAS — ff:0.25G · land:2.0G · min:250ms' },
+    };
+
+    const p = presets[type];
+    this._fsm.cfg.ff    = p.ff;
+    this._fsm.cfg.land  = p.land;
+    this._fsm.cfg.minMs = p.minMs;
+    this._wave._ff      = p.ff;
+    this._wave._land    = p.land;
+    this._wave._dirty   = true;
+
+    // Update toggle UI
+    const slider  = document.getElementById('bikeSlider');
+    const elecBtn = document.getElementById('bikeElec');
+    const gasBtn  = document.getElementById('bikeGas');
+    const info    = document.getElementById('bikePresetInfo');
+
+    slider.className  = type === 'gas' ? 'bike-slider gas' : 'bike-slider';
+    elecBtn.classList.toggle('active', type === 'electric');
+    gasBtn.classList.toggle('active',  type === 'gas');
+    info.textContent  = p.label;
+  }
     const badge = document.getElementById('gpsBadge');
     const dot   = document.getElementById('gpsDot');
     const label = document.getElementById('gpsLabel');
