@@ -856,8 +856,11 @@ class FSM {
     this._filtGyro = SP.lpf(gyro, this._filtGyro, 0.2);
     switch(this._s) {
       case FSM.S.GROUND:
-        if (mag < this.cfg.ff && this._filtGyro < 400) {
+        // No gyro check — handlebar mount rotates heavily during jumps
+        // Just need magnitude to drop below freefall threshold
+        if (mag < this.cfg.ff) {
           if (++this._fsSamples >= 2) { this._to(FSM.S.AIR, ts); this._t0=ts; this._peakG=0; this._peakW=0; }
+        } else this._fsSamples=0;
         } else this._fsSamples=0;
         break;
       case FSM.S.AIR:
@@ -887,7 +890,7 @@ class Wave {
   constructor(el) {
     this._c = el; this._ctx = el.getContext('2d');
     this._buf = new Float32Array(300); this._h = 0;
-    this._ff = 0.75; this._land = 1.2; this._dirty = false;
+    this._ff = 0.50; this._land = 1.2; this._dirty = false;
     new ResizeObserver(()=>this._resize()).observe(el.parentElement);
     this._resize(); requestAnimationFrame(()=>this._loop());
   }
@@ -1123,7 +1126,7 @@ class App {
 
     this._wave = new Wave(document.getElementById('analogWave'));
     this._fsm  = new FSM(
-      { ff:0.75, land:1.2, minMs:80 },
+      { ff:0.50, land:1.2, minMs:80 },
       e => this._onJump(e),
       s => this._onState(s)
     );
@@ -1241,8 +1244,8 @@ class App {
     this._bikeType = type;
 
     const presets = {
-      electric: { ff: 0.75, land: 1.2, minMs: 80,
-        label: '⚡ ELECTRIC — ff:0.75G · land:1.2G · min:80ms' },
+      electric: { ff: 0.50, land: 1.2, minMs: 80,
+        label: '⚡ ELECTRIC — ff:0.50G · land:1.2G · min:80ms' },
       gas:      { ff: 0.25, land: 2.0, minMs: 250,
         label: '🔥 GAS — ff:0.25G · land:2.0G · min:250ms' },
     };
