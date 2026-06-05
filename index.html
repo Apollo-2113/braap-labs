@@ -632,6 +632,18 @@ canvas#analogWave {
   text-align: center;
 }
 
+.btn-export {
+  background: linear-gradient(180deg, #0e1a24 0%, #080e16 100%);
+  border: 1px solid var(--border2);
+  color: var(--chrome-hi);
+  text-shadow: 0 0 8px rgba(240,200,64,0.3);
+}
+.btn-export:hover {
+  background: linear-gradient(180deg, #162230 0%, #0c1420 100%);
+  box-shadow: 0 0 12px rgba(240,200,64,0.15);
+}
+.btn-export:disabled { opacity: 0.3; cursor: not-allowed; }
+
 .empty-log {
   padding: 32px;
   text-align: center;
@@ -814,6 +826,7 @@ canvas#analogWave {
     <button class="btn btn-sim"   id="btnSim">▶ Simulate</button>
     <button class="btn btn-stop"  id="btnStop" disabled>■ Stop</button>
     <button class="btn btn-clear" id="btnClear">Clear Log</button>
+    <button class="btn btn-export" id="btnExport" style="grid-column:span 2">⬇ Export Session Data</button>
   </div>
 
   <!-- JUMP LOG -->
@@ -1140,6 +1153,7 @@ class App {
     document.getElementById('btnSim').addEventListener('click',    () => this._startSim());
     document.getElementById('btnStop').addEventListener('click',   () => this._stop());
     document.getElementById('btnClear').addEventListener('click',  () => this._clear());
+    document.getElementById('btnExport').addEventListener('click', () => this._exportSession());
 
     this._lastUi = 0;
 
@@ -1240,7 +1254,53 @@ class App {
     document.getElementById('btnSim').disabled    =  on;
   }
 
-  setBikeType(type) {
+  _exportSession() {
+    if (!this._jumps.length) {
+      alert('No jumps to export yet.');
+      return;
+    }
+
+    const payload = {
+      exportedAt:    new Date().toISOString(),
+      bikeType:      this._bikeType,
+      settings: {
+        freefallThresholdG: this._fsm.cfg.ff,
+        landingThresholdG:  this._fsm.cfg.land,
+        minAirtimeMs:       this._fsm.cfg.minMs,
+        arcFactor:          this._arcFactor,
+        lpfAlpha:           0.25,
+      },
+      sessionSummary: {
+        totalJumps:       this._jumps.length,
+        bestAirtimeSec:   Math.max(...this._jumps.map(j => j.airtimeMs)) / 1000,
+        bestDistanceFt:   Math.max(...this._jumps.filter(j => j.distanceFt).map(j => j.distanceFt)),
+        avgAirtimeSec:    (this._jumps.reduce((a,j) => a + j.airtimeMs, 0) / this._jumps.length / 1000).toFixed(3),
+        avgImpactG:       (this._jumps.reduce((a,j) => a + j.impactG, 0) / this._jumps.length).toFixed(2),
+      },
+      jumps: [...this._jumps].reverse().map(j => ({
+        id:              j.id,
+        timestamp:       j.timestamp.toISOString(),
+        airtimeSec:      (j.airtimeMs / 1000).toFixed(3),
+        airtimeMs:       j.airtimeMs,
+        impactG:         j.impactG,
+        distanceFt:      j.distanceFt,
+        distanceMethod:  j.distLabel || 'unknown',
+        peakRotationDps: j.peakW,
+      })),
+    };
+
+    const json     = JSON.stringify(payload, null, 2);
+    const blob     = new Blob([json], { type: 'application/json' });
+    const url      = URL.createObjectURL(blob);
+    const a        = document.createElement('a');
+    const filename = `motoair-session-${new Date().toISOString().slice(0,19).replace(/[:.]/g,'-')}.json`;
+    a.href         = url;
+    a.download     = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
     this._bikeType = type;
 
     const presets = {
