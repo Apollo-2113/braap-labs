@@ -797,7 +797,7 @@ canvas#analogWave {
       <div class="gauge-svg-wrap">
         <svg viewBox="0 0 160 100" width="160" height="100">
           <defs>
-            <radialGradient id="dialGrad" cx="50%" cy="100%" r="80%">
+            <radialGradient id="dialBg" cx="50%" cy="100%" r="80%">
               <stop offset="0%" stop-color="#1c1600"/>
               <stop offset="100%" stop-color="#060400"/>
             </radialGradient>
@@ -1702,10 +1702,81 @@ class App {
     const lbl  = document.getElementById('themeLabel');
     icon.textContent = sw ? '🌙' : '☀';
     lbl.textContent  = sw ? 'GOLDEN' : 'SW MODE';
-    // Update waveform threshold colors
+
+    // SW palette
+    const p = sw ? {
+      dialBg0:  '#001020', dialBg1:  '#000810',
+      bezelIn:  '#003048', bezelOut: '#005070',
+      arcGreen: '#00ff88', arcAmber: '#00d4ff', arcRed: '#ff3030',
+      tick:     '#00b4d8', tickDim:  '#005070',
+      label:    '#00b4d8', needleFill: '#00d4ff',
+      pivotBg:  '#000a0f', pivotRing: '#00b4d8', pivotDot: '#80f0ff',
+      readoutBg:'#000a0f', readoutBdr:'#003048', readoutTxt:'#00d4ff',
+    } : {
+      dialBg0:  '#1c1600', dialBg1:  '#060400',
+      bezelIn:  '#3a2e08', bezelOut: '#5a4010',
+      arcGreen: '#a8c820', arcAmber: '#f0a800', arcRed: '#e84820',
+      tick:     '#c8a820', tickDim:  '#7a5808',
+      label:    '#c8a820', needleFill: '#f0a800',
+      pivotBg:  '#1c1600', pivotRing: '#c8a820', pivotDot: '#f0c840',
+      readoutBg:'#080600', readoutBdr:'#3a2e08', readoutTxt:'#f0c840',
+    };
+
+    // Update SVG gradient stop colors
+    document.querySelectorAll('#dialBg stop').forEach((s, i) => {
+      s.setAttribute('stop-color', i === 0 ? p.dialBg0 : p.dialBg1);
+    });
+
+    // Recolor all gauge SVG elements by selector
+    const set = (sel, attr, val) =>
+      document.querySelectorAll(sel).forEach(el => el.setAttribute(attr, val));
+
+    // Dial faces & bezels
+    set('svg path[stroke="#3a2e08"]', 'stroke', p.bezelIn);
+    set('svg path[stroke="#5a4010"]', 'stroke', p.bezelOut);
+
+    // Arc zones
+    set(`svg path[stroke="${sw ? '#a8c820' : '#00ff88'}"]`, 'stroke', p.arcGreen);
+    set(`svg path[stroke="${sw ? '#f0a800' : '#00d4ff'}"]`, 'stroke', p.arcAmber);
+    set(`svg path[stroke="${sw ? '#e84820' : '#ff3030'}"]`, 'stroke', p.arcRed);
+
+    // Ticks
+    set(`svg g[stroke="${sw ? '#c8a820' : '#00b4d8'}"] line`, 'stroke', p.tick);
+    set(`svg g[stroke="${sw ? '#7a5808' : '#005070'}"] line`, 'stroke', p.tickDim);
+
+    // Labels & readout text
+    document.querySelectorAll('svg text[fill]').forEach(t => {
+      const f = t.getAttribute('fill');
+      if (f === (sw ? '#00b4d8' : '#c8a820')) t.setAttribute('fill', p.label);
+      if (f === (sw ? '#00d4ff' : '#f0c840')) t.setAttribute('fill', p.readoutTxt);
+    });
+
+    // Needle polygons
+    document.querySelectorAll('svg polygon').forEach(el => {
+      const f = el.getAttribute('fill');
+      if (f === (sw ? '#f0a800' : '#00d4ff')) el.setAttribute('fill', p.needleFill);
+    });
+
+    // Pivot circles
+    document.querySelectorAll('svg circle').forEach(el => {
+      const f = el.getAttribute('fill');
+      const s = el.getAttribute('stroke');
+      if (f === (sw ? '#1c1600' : '#000a0f')) el.setAttribute('fill', p.pivotBg);
+      if (s === (sw ? '#c8a820' : '#00b4d8')) el.setAttribute('stroke', p.pivotRing);
+      if (f === (sw ? '#f0c840' : '#80f0ff')) el.setAttribute('fill', p.pivotDot);
+    });
+
+    // Readout boxes
+    document.querySelectorAll('svg rect').forEach(el => {
+      const f = el.getAttribute('fill');
+      const s = el.getAttribute('stroke');
+      if (f === (sw ? '#080600' : '#000a0f')) el.setAttribute('fill', p.readoutBg);
+      if (s === (sw ? '#3a2e08' : '#003048')) el.setAttribute('stroke', p.readoutBdr);
+    });
+
+    // Update waveform
     this._wave._swMode = sw;
     this._wave._dirty  = true;
-    // Persist preference
     localStorage.setItem('motoair-theme', sw ? 'sw' : 'golden');
   }
 
