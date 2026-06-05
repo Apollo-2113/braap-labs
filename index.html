@@ -972,7 +972,7 @@ canvas#analogWave {
       letter-spacing: 0.12em;
       padding: 5px 10px;
       cursor: pointer;
-    ">▶ LIVE</button>
+    ">▶ LIVE (5s)</button>
   </div>
 
   <!-- BIKE TYPE TOGGLE -->
@@ -1107,6 +1107,7 @@ class Wave {
     // Touch/drag scrubbing
     this._dragStart = null;
     this._dragScrollStart = null;
+    this._autoResumeTimer = null;
     this._bindTouch();
 
     new ResizeObserver(() => this._resize()).observe(el.parentElement);
@@ -1118,7 +1119,9 @@ class Wave {
     this._hist[this._head % this._HIST] = v;
     this._head++;
     this._total++;
-    if (this._live) this._scrollPos = Math.max(0, this._total - this._viewWidth);
+    if (this._live) {
+      this._scrollPos = Math.max(0, this._total - this._viewWidth);
+    }
     this._dirty = true;
   }
 
@@ -1151,6 +1154,7 @@ class Wave {
         this._dragStart = e.touches[0].clientX;
         this._dragScrollStart = this._scrollPos;
         this._live = false;
+        this._clearAutoResume();
         this._updateLiveBtn();
       }
     }, { passive: true });
@@ -1167,13 +1171,17 @@ class Wave {
       this._dirty = true;
     }, { passive: true });
 
-    el.addEventListener('touchend', () => { this._dragStart = null; }, { passive: true });
+    el.addEventListener('touchend', () => {
+      this._dragStart = null;
+      this._startAutoResume();
+    }, { passive: true });
 
     // Mouse drag for desktop testing
     el.addEventListener('mousedown', e => {
       this._dragStart = e.clientX;
       this._dragScrollStart = this._scrollPos;
       this._live = false;
+      this._clearAutoResume();
       this._updateLiveBtn();
     });
     el.addEventListener('mousemove', e => {
@@ -1187,8 +1195,29 @@ class Wave {
           this._dragScrollStart + deltaSamples));
       this._dirty = true;
     });
-    el.addEventListener('mouseup',    () => { this._dragStart = null; });
-    el.addEventListener('mouseleave', () => { this._dragStart = null; });
+    el.addEventListener('mouseup', () => {
+      this._dragStart = null;
+      this._startAutoResume();
+    });
+    el.addEventListener('mouseleave', () => {
+      this._dragStart = null;
+      this._startAutoResume();
+    });
+  }
+
+  // Auto-resume live mode 5 seconds after last user interaction
+  _startAutoResume() {
+    this._clearAutoResume();
+    this._autoResumeTimer = setTimeout(() => {
+      this.goLive();
+    }, 5000);
+  }
+
+  _clearAutoResume() {
+    if (this._autoResumeTimer) {
+      clearTimeout(this._autoResumeTimer);
+      this._autoResumeTimer = null;
+    }
   }
 
   goLive() {
