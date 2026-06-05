@@ -558,7 +558,7 @@
     <div class="metric-card" style="--accent-color: var(--accent-lime)">
       <div class="metric-label">Airtime Counter</div>
       <div class="metric-value" id="metricAirtime">0</div>
-      <div class="metric-unit">milliseconds</div>
+      <div class="metric-unit">seconds</div>
     </div>
     <div class="metric-card" style="--accent-color: var(--accent-hot)">
       <div class="metric-label">Jump Count</div>
@@ -627,7 +627,7 @@
           <tr>
             <th>#</th>
             <th>Timestamp</th>
-            <th>Airtime</th>
+            <th>Airtime (s)</th>
             <th>Impact (G)</th>
             <th>Peak ω (°/s)</th>
             <th>Quality</th>
@@ -1393,7 +1393,7 @@ class App {
     // Airtime live counter
     if (state === JumpStateMachine.State.AIRBORNE_FREEFALL && this._fsm._takeoffTime) {
       const elapsed = performance.now() - this._fsm._takeoffTime;
-      this._ui.metricAirtime.textContent = Math.round(elapsed);
+      this._ui.metricAirtime.textContent = (elapsed / 1000).toFixed(3);
       if (this._currentGyroMag > parseFloat(this._ui.metricGyro.textContent)) {
         this._ui.metricGyro.textContent = Math.round(this._currentGyroMag);
       }
@@ -1425,7 +1425,7 @@ class App {
     // Immutable event received — log it
     this._jumps.unshift(event); // newest at top
     this._ui.metricJumps.textContent = event.id;
-    this._ui.metricAirtime.textContent = event.airtimeMs;
+    this._ui.metricAirtime.textContent = (event.airtimeMs / 1000).toFixed(3);
     this._ui.metricGyro.textContent = event.peakAngularVelDps;
     this._appendJumpRow(event);
     this._ui.logCount.textContent = `${event.id} jump${event.id !== 1 ? 's' : ''}`;
@@ -1518,7 +1518,7 @@ class App {
     tr.innerHTML = `
       <td class="jump-num">#${event.id}</td>
       <td class="timestamp">${timeStr}</td>
-      <td class="airtime">${event.airtimeMs}<span style="font-size:10px;opacity:0.5">ms</span> <span style="color:var(--text-dim);font-size:10px">(${airSec}s)</span></td>
+      <td class="airtime">${(event.airtimeMs / 1000).toFixed(3)}<span style="font-size:10px;opacity:0.5">s</span></td>
       <td class="impact ${event.impactG > 3.5 ? 'heavy' : ''}">${event.impactG.toFixed(1)}G</td>
       <td class="peak-gyro">${event.peakAngularVelDps}°/s</td>
       <td><span style="color:${quality.color};font-size:11px;letter-spacing:0.05em">${quality.label}</span></td>
@@ -1543,7 +1543,7 @@ class App {
     this._ui.jumpTable.style.display = 'none';
     this._ui.emptyState.style.display = '';
     this._ui.metricJumps.textContent = '0';
-    this._ui.metricAirtime.textContent = '0';
+    this._ui.metricAirtime.textContent = '0.000';
     this._ui.metricGyro.textContent = '0.0';
     this._ui.logCount.textContent = '0 jumps';
   }
