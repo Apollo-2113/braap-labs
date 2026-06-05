@@ -888,12 +888,14 @@ class FSM {
         // No gyro check — handlebar mount rotates heavily during jumps
         // Just need magnitude to drop below freefall threshold
         if (mag < this.cfg.ff) {
-          if (++this._fsSamples >= 2) { this._to(FSM.S.AIR, ts); this._t0=ts; this._peakG=0; this._peakW=0; }
+          if (++this._fsSamples >= 4) { this._to(FSM.S.AIR, ts); this._t0=ts; this._peakG=0; this._peakW=0; }
         } else this._fsSamples=0;
         break;
       case FSM.S.AIR:
         if (gyro > this._peakW) this._peakW = gyro;
         if (rawMag > this._peakG) this._peakG = rawMag;
+        // Auto-cancel if airborne > 3 seconds — must be a false positive
+        if (ts - this._t0 > 3000) { this._to(FSM.S.GROUND, ts); this._fsSamples=0; break; }
         // Use RAW magnitude for landing detection, filtered for impact recording
         if (rawMag > this.cfg.land) { this._to(FSM.S.LAND, ts); this._doLand(mag, rawMag, ts); }
         break;
@@ -1400,7 +1402,7 @@ class App {
     this._fsm  = new FSM(
       { ff:0.80, land:1.5, minMs:150 },
       e => this._onJump(e),
-      s => this._onState(s)
+      (s, prev) => this._onState(s, prev)
     );
     this._session = null; this._sim = null;
     this._gps = new GpsTracker(status => this._updateGpsBadge(status));
@@ -1482,7 +1484,7 @@ class App {
     }
   }
 
-  _onState(s) {
+  _onState(s, prev) {
     if (s === FSM.S.AIR) {
       this._takeoffGpsState = this._gps.snapshotState();
       this._takeoffSpeedMph = this._takeoffGpsState.speed;
@@ -1491,6 +1493,16 @@ class App {
     if (s === FSM.S.LAND) {
       this._fsm._t0 = null; // freeze airtime counter immediately
       this._flashImpact();
+    }
+    // Auto-cancelled false positive — reset display back to last real jump
+    if (s === FSM.S.GROUND && prev === FSM.S.AIR) {
+      this._wave._currentAirStart = null; // remove the in-flight region
+      const lastJump = this._jumps[0];
+      if (lastJump) {
+        document.getElementById('nixieTime').innerHTML = (lastJump.airtimeMs/1000).toFixed(3) + '<span class="unit">s</span>';
+      } else {
+        document.getElementById('nixieTime').innerHTML = '0.000<span class="unit">s</span>';
+      }
     }
   }
 
