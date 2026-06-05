@@ -795,12 +795,29 @@ canvas#analogWave {
   </div>
 
   <!-- STRIP CHART -->
-  <div class="strip-housing">
+  <div class="strip-housing" style="position:relative">
     <div class="strip-header">
       <div class="strip-title">Accel. Magnitude — Filtered</div>
-      <div class="strip-hz" id="stripHz">0 Hz</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <div class="strip-hz" id="stripHz">0 Hz</div>
+      </div>
     </div>
-    <canvas id="analogWave"></canvas>
+    <canvas id="analogWave" style="cursor:grab"></canvas>
+    <!-- LIVE button — appears when scrubbing -->
+    <button id="waveformLiveBtn" onclick="window._app._wave.goLive()" style="
+      position:absolute; bottom:10px; right:10px;
+      opacity:0; pointer-events:none;
+      transition: opacity 0.2s;
+      background: rgba(240,168,0,0.9);
+      color: #000;
+      border: none;
+      border-radius: 2px;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      padding: 5px 10px;
+      cursor: pointer;
+    ">▶ LIVE</button>
   </div>
 
   <!-- BIKE TYPE TOGGLE -->
@@ -899,57 +916,223 @@ class FSM {
   get state() { return this._s; }
 }
 
-/* ── Waveform Renderer ── */
+/* ── Waveform Renderer — scrollable session history ── */
 class Wave {
   constructor(el) {
-    this._c = el; this._ctx = el.getContext('2d');
-    this._buf = new Float32Array(300); this._h = 0;
-    this._ff = 0.80; this._land = 1.5; this._dirty = false;
-    new ResizeObserver(()=>this._resize()).observe(el.parentElement);
-    this._resize(); requestAnimationFrame(()=>this._loop());
+    this._c   = el;
+    this._ctx = el.getContext('2d');
+
+    // Large history buffer — 18000 samples ≈ 5 min at 60Hz
+    this._HIST  = 18000;
+    this._hist  = new Float32Array(this._HIST);
+    this._head  = 0;      // next write position
+    this._total = 0;      // total samples written
+
+    // Scroll state
+    this._live       = true;   // live mode = always show latest
+    this._scrollPos  = 0;      // index of leftmost visible sample (in live mode ignored)
+    this._viewWidth  = 300;    // how many samples visible at once
+
+    // Jump markers [{sampleIdx, label}]
+    this._markers = [];
+
+    this._ff   = 0.80;
+    this._land = 1.5;
+    this._dirty = false;
+
+    // Touch/drag scrubbing
+    this._dragStart = null;
+    this._dragScrollStart = null;
+    this._bindTouch();
+
+    new ResizeObserver(() => this._resize()).observe(el.parentElement);
+    this._resize();
+    requestAnimationFrame(() => this._loop());
   }
-  push(v) { this._buf[this._h++ % this._buf.length]=v; this._dirty=true; }
+
+  push(v) {
+    this._hist[this._head % this._HIST] = v;
+    this._head++;
+    this._total++;
+    if (this._live) this._scrollPos = Math.max(0, this._total - this._viewWidth);
+    this._dirty = true;
+  }
+
+  // Call when a jump lands to place a marker on the waveform
+  markJump(label) {
+    this._markers.push({ idx: this._total - 1, label });
+    // Keep only last 50 markers
+    if (this._markers.length > 50) this._markers.shift();
+  }
+
+  _bindTouch() {
+    const el = this._c;
+
+    // Touch drag to scrub
+    el.addEventListener('touchstart', e => {
+      if (e.touches.length === 1) {
+        this._dragStart = e.touches[0].clientX;
+        this._dragScrollStart = this._scrollPos;
+        this._live = false;
+        this._updateLiveBtn();
+      }
+    }, { passive: true });
+
+    el.addEventListener('touchmove', e => {
+      if (this._dragStart === null || e.touches.length !== 1) return;
+      const dx       = e.touches[0].clientX - this._dragStart;
+      const dpr      = window.devicePixelRatio || 1;
+      const pxPerSample = this._c.width / dpr / this._viewWidth;
+      const deltaSamples = Math.round(-dx / pxPerSample);
+      this._scrollPos = Math.max(0,
+        Math.min(Math.max(0, this._total - this._viewWidth),
+          this._dragScrollStart + deltaSamples));
+      this._dirty = true;
+    }, { passive: true });
+
+    el.addEventListener('touchend', () => { this._dragStart = null; }, { passive: true });
+
+    // Mouse drag for desktop testing
+    el.addEventListener('mousedown', e => {
+      this._dragStart = e.clientX;
+      this._dragScrollStart = this._scrollPos;
+      this._live = false;
+      this._updateLiveBtn();
+    });
+    el.addEventListener('mousemove', e => {
+      if (this._dragStart === null) return;
+      const dx = e.clientX - this._dragStart;
+      const dpr = window.devicePixelRatio || 1;
+      const pxPerSample = this._c.width / dpr / this._viewWidth;
+      const deltaSamples = Math.round(-dx / pxPerSample);
+      this._scrollPos = Math.max(0,
+        Math.min(Math.max(0, this._total - this._viewWidth),
+          this._dragScrollStart + deltaSamples));
+      this._dirty = true;
+    });
+    el.addEventListener('mouseup',    () => { this._dragStart = null; });
+    el.addEventListener('mouseleave', () => { this._dragStart = null; });
+  }
+
+  goLive() {
+    this._live = true;
+    this._scrollPos = Math.max(0, this._total - this._viewWidth);
+    this._dirty = true;
+    this._updateLiveBtn();
+  }
+
+  _updateLiveBtn() {
+    const btn = document.getElementById('waveformLiveBtn');
+    if (!btn) return;
+    btn.style.opacity  = this._live ? '0' : '1';
+    btn.style.pointerEvents = this._live ? 'none' : 'auto';
+  }
+
   _resize() {
-    const dpr=window.devicePixelRatio||1, p=this._c.parentElement;
-    this._c.width=p.clientWidth*dpr; this._c.height=90*dpr;
-    this._c.style.width=p.clientWidth+'px'; this._c.style.height='160px';
-    this._dirty=true;
+    const dpr = window.devicePixelRatio || 1;
+    const p   = this._c.parentElement;
+    this._c.width  = p.clientWidth * dpr;
+    this._c.height = 160 * dpr;
+    this._c.style.width  = p.clientWidth + 'px';
+    this._c.style.height = '160px';
+    // Recalculate how many samples fit in view
+    this._viewWidth = Math.round(p.clientWidth * 0.6); // ~0.6 samples per pixel
+    this._dirty = true;
   }
-  _loop() { if(this._dirty){this._draw();this._dirty=false;} requestAnimationFrame(()=>this._loop()); }
+
+  _loop() {
+    if (this._dirty) { this._draw(); this._dirty = false; }
+    requestAnimationFrame(() => this._loop());
+  }
+
   _draw() {
-    const ctx=this._ctx, W=this._c.width, H=this._c.height, dpr=window.devicePixelRatio||1;
-    const PAD=6*dpr, DH=H-PAD*2;
-    ctx.clearRect(0,0,W,H);
-    // Dark warm background with subtle grid
-    ctx.fillStyle='#0c0b06'; ctx.fillRect(0,0,W,H);
-    // Horizontal graph lines (ice, very dim)
-    ctx.strokeStyle='rgba(46,61,80,0.4)'; ctx.lineWidth=1;
-    for(let i=1;i<4;i++){const y=PAD+DH/4*i;ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
-    const N=this._buf.length, len=Math.min(this._h,N), yMax=Math.max(4,this._land*1.4);
-    const ys=DH/yMax;
-    // Threshold lines — etched look
-    const ffy=PAD+DH-this._ff*ys, ldy=PAD+DH-this._land*ys;
-    ctx.strokeStyle='rgba(96,200,64,0.35)'; ctx.setLineDash([3*dpr,5*dpr]); ctx.lineWidth=1;
-    ctx.beginPath();ctx.moveTo(0,ffy);ctx.lineTo(W,ffy);ctx.stroke();
-    ctx.strokeStyle='rgba(232,64,48,0.4)'; ctx.setLineDash([3*dpr,3*dpr]);
-    ctx.beginPath();ctx.moveTo(0,ldy);ctx.lineTo(W,ldy);ctx.stroke();
-    ctx.setLineDash([]);
-    if(len<2) return;
-    // Cold titanium trace — precision instrument
-    ctx.shadowColor='rgba(240,168,0,0.55)'; ctx.shadowBlur=4*dpr;
-    ctx.strokeStyle='#f0a800'; ctx.lineWidth=2*dpr; ctx.lineJoin='round';
-    ctx.beginPath();
-    for(let i=0;i<len;i++){
-      const bi=(this._h-len+i)%N, v=this._buf[(bi+N)%N];
-      const x=(i/(N-1))*W, y=PAD+DH-Math.min(v*ys,DH);
-      i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    const ctx = this._ctx;
+    const W   = this._c.width, H = this._c.height;
+    const dpr = window.devicePixelRatio || 1;
+    const PAD = 8 * dpr, DH = H - PAD * 2;
+
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = '#080600';
+    ctx.fillRect(0, 0, W, H);
+
+    // Grid
+    ctx.strokeStyle = 'rgba(58,46,8,0.5)';
+    ctx.lineWidth = 1;
+    for (let i = 1; i < 4; i++) {
+      const y = PAD + DH / 4 * i;
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
     }
-    ctx.stroke(); ctx.shadowBlur=0;
-    // Labels
-    ctx.fillStyle='rgba(168,200,32,0.55)'; ctx.font=`${8*dpr}px Share Tech Mono`;
-    ctx.fillText(`${this._ff}G`,4*dpr,ffy-3*dpr);
-    ctx.fillStyle='rgba(232,64,48,0.55)';
-    ctx.fillText(`${this._land}G`,4*dpr,ldy-3*dpr);
+
+    const yMax = Math.max(4, this._land * 1.5);
+    const ys   = DH / yMax;
+
+    // Threshold lines
+    const ffy = PAD + DH - this._ff   * ys;
+    const ldy = PAD + DH - this._land * ys;
+    ctx.setLineDash([3 * dpr, 5 * dpr]);
+    ctx.strokeStyle = 'rgba(96,200,64,0.4)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(0, ffy); ctx.lineTo(W, ffy); ctx.stroke();
+    ctx.strokeStyle = 'rgba(232,64,48,0.5)';
+    ctx.beginPath(); ctx.moveTo(0, ldy); ctx.lineTo(W, ldy); ctx.stroke();
+    ctx.setLineDash([]);
+
+    const start = this._scrollPos;
+    const end   = start + this._viewWidth;
+    const len   = Math.min(end, this._total) - start;
+    if (len < 2) return;
+
+    // ── Waveform trace
+    ctx.shadowColor = 'rgba(240,168,0,0.5)';
+    ctx.shadowBlur  = 5 * dpr;
+    ctx.strokeStyle = '#f0a800';
+    ctx.lineWidth   = 2 * dpr;
+    ctx.lineJoin    = 'round';
+    ctx.beginPath();
+    for (let i = 0; i < len; i++) {
+      const sampleIdx = (start + i) % this._HIST;
+      const v = this._hist[(sampleIdx + this._HIST) % this._HIST];
+      const x = (i / (this._viewWidth - 1)) * W;
+      const y = PAD + DH - Math.min(v * ys, DH);
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    // ── Jump markers
+    ctx.font = `${9 * dpr}px Share Tech Mono`;
+    for (const m of this._markers) {
+      if (m.idx < start || m.idx >= end) continue;
+      const x = ((m.idx - start) / (this._viewWidth - 1)) * W;
+      // Vertical line
+      ctx.strokeStyle = 'rgba(240,200,64,0.6)';
+      ctx.lineWidth   = 1.5 * dpr;
+      ctx.setLineDash([4 * dpr, 3 * dpr]);
+      ctx.beginPath(); ctx.moveTo(x, PAD); ctx.lineTo(x, H - PAD); ctx.stroke();
+      ctx.setLineDash([]);
+      // Label
+      ctx.fillStyle = 'rgba(240,200,64,0.8)';
+      ctx.fillText(m.label, x + 3 * dpr, PAD + 10 * dpr);
+    }
+
+    // ── Threshold labels
+    ctx.fillStyle = 'rgba(96,200,64,0.6)';
+    ctx.font = `${8 * dpr}px Share Tech Mono`;
+    ctx.fillText(`${this._ff}G`, 4 * dpr, ffy - 3 * dpr);
+    ctx.fillStyle = 'rgba(232,64,48,0.6)';
+    ctx.fillText(`${this._land}G`, 4 * dpr, ldy - 3 * dpr);
+
+    // ── Scroll position indicator (mini scrollbar)
+    if (this._total > this._viewWidth) {
+      const barH   = 3 * dpr;
+      const barY   = H - barH;
+      const ratio  = this._viewWidth / this._total;
+      const barW   = W * ratio;
+      const barX   = (this._scrollPos / this._total) * W;
+      ctx.fillStyle = 'rgba(80,60,10,0.5)';
+      ctx.fillRect(0, barY, W, barH);
+      ctx.fillStyle = this._live ? 'rgba(240,168,0,0.6)' : 'rgba(240,200,64,0.9)';
+      ctx.fillRect(barX, barY, barW, barH);
+    }
   }
 }
 
@@ -1429,6 +1612,8 @@ class App {
     document.getElementById('logCount').textContent = e.id + ' JUMP' + (e.id!==1?'S':'');
     this._updateBestAirtime();
     this._renderLog();
+    // Mark jump position on waveform
+    this._wave.markJump(`#${eventWithDist.id}`);
   }
 
   _renderLog() {
@@ -1519,6 +1704,8 @@ class App {
 
   _clear() {
     this._jumps = []; this._fsm._count = 0;
+    this._wave._markers = [];
+    this._wave._head = 0; this._wave._total = 0; this._wave._scrollPos = 0;
     document.getElementById('logEntries').innerHTML = '';
     document.getElementById('emptyLog').style.display = '';
     document.getElementById('nixieTime').innerHTML = '0.000<span class="unit">s</span>';
