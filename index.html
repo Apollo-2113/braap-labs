@@ -945,7 +945,7 @@ class Wave {
     this._currentAirStart = null;
 
     this._ff   = 0.80;
-    this._land = 1.8;
+    this._land = 1.5;
     this._dirty = false;
 
     // Touch/drag scrubbing
@@ -1403,7 +1403,7 @@ class App {
 
     this._wave = new Wave(document.getElementById('analogWave'));
     this._fsm  = new FSM(
-      { ff:0.80, land:1.8, minMs:150, minSpeedMph:5 },
+      { ff:0.80, land:1.5, minMs:150, minSpeedMph:5 },
       e => this._onJump(e),
       (s, prev) => this._onState(s, prev)
     );
@@ -1589,7 +1589,7 @@ class App {
 
     const presets = {
       electric: { ff: 0.80, land: 1.8, minMs: 150, minSpeedMph: 5, arcFactor: 0.65,
-        label: '⚡ ELECTRIC — ff:0.80G · land:1.8G · min:150ms · minSpd:5mph' },
+        label: '⚡ ELECTRIC — ff:0.80G · land:1.5G · min:150ms · minSpd:5mph' },
       gas:      { ff: 0.25, land: 2.0, minMs: 250, minSpeedMph: 5, arcFactor: 0.85,
         label: '🔥 GAS — ff:0.25G · land:2.0G · min:250ms · minSpd:5mph' },
     };
