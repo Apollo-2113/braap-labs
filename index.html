@@ -263,11 +263,10 @@ body::after {
   font-size: 40px !important;
 }
 .nixie-dist {
-  color: var(--green) !important;
+  color: var(--white) !important;
   text-shadow:
-    0 0 8px rgba(168,200,32,0.85),
-    0 0 20px rgba(168,200,32,0.45),
-    0 0 40px rgba(168,200,32,0.22) !important;
+    0 0 8px rgba(240,220,160,0.6),
+    0 0 20px rgba(240,220,160,0.25) !important;
 }
 
 .airtime-housing {
@@ -789,8 +788,8 @@ canvas#analogWave {
     <div class="nixie-panel">
       <div class="screw tl"></div><div class="screw tr"></div>
       <div class="screw bl"></div><div class="screw br"></div>
-      <div class="airtime-label">Est. Distance</div>
-      <div class="nixie nixie-sm nixie-dist" id="nixieDist">--<span class="unit">ft</span></div>
+      <div class="airtime-label">Jump Distance</div>
+      <div class="nixie nixie-sm nixie-dist" id="nixieDist">--<span class="unit">rel</span></div>
       <div class="airtime-sub" id="distSub">GPS NEEDED</div>
     </div>
   </div>
@@ -1210,16 +1209,16 @@ class App {
         const speedFps = tState.speed * 1.46667;
         const estFt    = Math.round(speedFps * elapsedS * this._arcFactor);
         this._lastDistFt = estFt;
-        document.getElementById('nixieDist').innerHTML = estFt + '<span class="unit">ft</span>';
+        document.getElementById('nixieDist').innerHTML = estFt + '<span class="unit">rel</span>';
         document.getElementById('distSub').textContent = 'IN FLIGHT';
       } else if (this._fsm.state === FSM.S.AIR && this._fsm._t0 && (!tState || tState.speed === null)) {
         // Airborne but no GPS — show airtime-based running estimate
         const elapsedS = (performance.now() - this._fsm._t0) / 1000;
         const estFt    = Math.round(25 * 1.46667 * elapsedS * this._arcFactor);
-        document.getElementById('nixieDist').innerHTML = '~' + estFt + '<span class="unit">ft</span>';
+        document.getElementById('nixieDist').innerHTML = '~' + estFt + '<span class="unit">rel</span>';
         document.getElementById('distSub').textContent = 'IN FLIGHT';
       } else if (this._fsm.state !== FSM.S.AIR && !this._jumps.length) {
-        document.getElementById('distSub').textContent = 'GPS NEEDED';
+        document.getElementById('distSub').textContent = 'RELATIVE';
       }
       document.getElementById('stripHz').textContent = this._lastHz + ' Hz';
 
@@ -1294,8 +1293,7 @@ class App {
         airtimeMs:       j.airtimeMs,
         impactG:         j.impactG,
         takeoffSpeedMph: j.takeoffSpeedMph ?? null,
-        distanceFt:      j.distanceFt,
-        distanceMethod:  j.distLabel || 'unknown',
+        relativeDistance: j.distanceFt,
         peakRotationDps: j.peakW,
       })),
     };
@@ -1378,7 +1376,7 @@ class App {
     if (!this._jumps.length) return;
     const bestJump = this._jumps.reduce((a, b) => a.airtimeMs > b.airtimeMs ? a : b);
     const el = document.getElementById('bestAirtimeVal');
-    const distStr = bestJump.distanceFt !== null ? ` · ${bestJump.distanceFt}ft` : '';
+    const distStr = bestJump.distanceFt !== null ? ` · ${bestJump.distanceFt}↔` : '';
     el.textContent = (bestJump.airtimeMs / 1000).toFixed(3) + 's' + distStr;
     el.classList.remove('empty');
   }
@@ -1386,7 +1384,7 @@ class App {
   _onJump(e) {
     // ── Distance calculation
     let distFt   = null;
-    let distLabel = 'LAST JUMP';
+    let distLabel = 'RELATIVE';
 
     const landingState = this._gps.snapshotState();
     const t = this._takeoffGpsState;
@@ -1397,7 +1395,7 @@ class App {
     const estFt = speedMph !== null
       ? Math.round(speedMph * 1.46667 * (e.airtimeMs / 1000) * this._arcFactor)
       : Math.round(25 * 1.46667 * (e.airtimeMs / 1000) * this._arcFactor);
-    const estLabel = speedMph !== null ? 'EST DIST' : '~ EST';
+    
 
     // GPS Haversine — only trust it for longer jumps where GPS error is < 50% of distance
     if (t && t.coords && landingState.coords) {
@@ -1409,18 +1407,18 @@ class App {
       // GPS accuracy ~16ft, so only trust it when jump is >40ft
       if (haversine > 40 && haversine < estFt * 2.5) {
         distFt    = Math.round(haversine);
-        distLabel = 'GPS DIST';
+        distLabel = 'RELATIVE';
       } else {
         distFt    = estFt;
-        distLabel = estLabel;
+        distLabel = 'RELATIVE';
       }
     } else {
       distFt    = estFt;
-      distLabel = estLabel;
+      distLabel = 'RELATIVE';
     }
 
     this._lastDistFt = distFt;
-    document.getElementById('nixieDist').innerHTML = distFt + '<span class="unit">ft</span>';
+    document.getElementById('nixieDist').innerHTML = distFt + '<span class="unit">rel</span>';
     document.getElementById('distSub').textContent = distLabel;
 
     // Include takeoff speed in event for export diagnostics
@@ -1461,8 +1459,8 @@ class App {
           <div class="le-delta">${d(e.airtimeMs, prev?.airtimeMs, true)}</div>
         </div>
         <div class="le-stat">
-          <div class="le-val" style="color:var(--green)">${e.distanceFt !== null ? e.distanceFt+'ft' : '--'}</div>
-          <div class="le-lbl">distance</div>
+          <div class="le-val" style="color:var(--green)">${e.distanceFt !== null ? e.distanceFt+'↔' : '--'}</div>
+          <div class="le-lbl">relative</div>
           <div class="le-delta">${e.distanceFt !== null ? d(e.distanceFt, prev?.distanceFt, true) : ''}</div>
         </div>
         <div class="le-stat">
@@ -1528,8 +1526,8 @@ class App {
     this._takeoffGpsState = null;
     this._takeoffSpeedMph = null;
     this._lastDistFt = 0;
-    document.getElementById('nixieDist').innerHTML = '--<span class="unit">ft</span>';
-    document.getElementById('distSub').textContent = 'GPS NEEDED';
+    document.getElementById('nixieDist').innerHTML = '--<span class="unit">rel</span>';
+    document.getElementById('distSub').textContent = 'RELATIVE';
     document.getElementById('sText').textContent = '--';
     document.getElementById('sText').className = 'speed-number';
     document.getElementById('sBar').style.width = '0%';
