@@ -546,10 +546,10 @@ canvas#analogWave {
 }
 .log-entry {
   display: grid;
-  grid-template-columns: 32px 1fr 1fr 1fr 1fr;
+  grid-template-columns: 48px 1fr 1fr 1fr;
   padding: 10px 14px;
   border-bottom: 1px solid rgba(58,52,32,0.5);
-  gap: 4px;
+  gap: 6px;
   align-items: center;
   transition: background 0.1s;
 }
@@ -564,6 +564,22 @@ canvas#analogWave {
   font-family: 'Share Tech Mono', monospace;
   font-size: 10px;
   color: var(--border2);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+.le-badge {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 8px;
+  color: var(--chrome);
+  letter-spacing: 0.05em;
+}
+.is-best .le-num::before {
+  content: '★';
+  display: block;
+  color: var(--chrome);
+  font-size: 10px;
 }
 .le-stat { display: flex; flex-direction: column; gap: 1px; }
 .le-val {
@@ -585,19 +601,6 @@ canvas#analogWave {
 .delta-up   { color: var(--green); }
 .delta-down { color: var(--red); }
 .delta-same { color: var(--border2); }
-
-.le-badge {
-  font-family: 'Share Tech Mono', monospace;
-  font-size: 9px;
-  color: var(--ice);
-  text-align: right;
-}
-.is-best .le-num::before {
-  content: '★';
-  display: block;
-  color: var(--chrome);
-  font-size: 10px;
-}
 
 /* ═══════════════════════════════════════════════
    COCKPIT CONTROLS — 1969 Analog Aircraft Panel
@@ -2394,9 +2397,12 @@ class App {
       const el = document.createElement('div');
       el.className = 'log-entry new-entry' + (e.airtimeMs===bestMs&&this._jumps.length>1?' is-best':'');
       el.innerHTML = `
-        <div class="le-num">#${e.id}</div>
+        <div class="le-num">
+          #${e.id}
+          ${e.airtimeMs===bestMs&&this._jumps.length>1?'<div class="le-badge">★ BEST</div>':''}
+        </div>
         <div class="le-stat">
-          <div class="le-val" style="color:var(--ice)"}>${(e.airtimeMs/1000).toFixed(3)}s</div>
+          <div class="le-val" style="color:var(--ice)">${(e.airtimeMs/1000).toFixed(3)}s</div>
           <div class="le-lbl">airtime</div>
           <div class="le-delta">${d(e.airtimeMs, prev?.airtimeMs, true)}</div>
         </div>
@@ -2410,7 +2416,6 @@ class App {
           <div class="le-lbl">impact</div>
           <div class="le-delta">${d(e.impactG, prev?.impactG, false)}</div>
         </div>
-        <div class="le-badge">${e.airtimeMs===bestMs&&this._jumps.length>1?'★ BEST':''}</div>
       `;
       container.appendChild(el);
     });
