@@ -876,9 +876,22 @@ canvas#analogWave {
 
 /* CLEAR LOG — always dim */
 .btn-clear .btn-inner { color: #383020; text-shadow: none; }
+.btn-clear.active .btn-inner,
 .btn-clear:active .btn-inner {
-  color: #c0a860;
-  text-shadow: 0 0 6px rgba(200,168,80,0.6), 0 0 14px rgba(180,140,40,0.3);
+  color: #f0c840;
+  text-shadow:
+    0 0 4px rgba(240,200,60,1),
+    0 0 10px rgba(240,180,0,0.8),
+    0 0 20px rgba(220,140,0,0.5),
+    0 0 40px rgba(200,100,0,0.2);
+}
+.btn-clear.active::after {
+  background: radial-gradient(circle at 35% 30%, #ffe080, #c08000);
+  box-shadow:
+    0 0 6px rgba(240,180,0,1),
+    0 0 14px rgba(240,180,0,0.7),
+    0 0 28px rgba(240,180,0,0.3),
+    inset 0 1px 1px rgba(255,255,255,0.4);
 }
 
 /* EXPORT — lamp only when has data (handled via .active class) */
@@ -2083,7 +2096,12 @@ class App {
     document.getElementById('btnEnable').addEventListener('click', () => this._startReal());
     document.getElementById('btnSim').addEventListener('click',    () => this._startSim());
     document.getElementById('btnStop').addEventListener('click',   () => this._stop());
-    document.getElementById('btnClear').addEventListener('click',  () => this._clear());
+    document.getElementById('btnClear').addEventListener('click',  () => {
+      const btn = document.getElementById('btnClear');
+      btn.classList.add('active');
+      setTimeout(() => btn.classList.remove('active'), 400);
+      this._clear();
+    });
     document.getElementById('btnExport').addEventListener('click', () => this._exportSession());
 
     this._lastUi = 0;
