@@ -798,8 +798,18 @@ canvas#analogWave {
 
 /* ── BUTTON VARIANTS — Golden Hour ── */
 
-/* SENSORS ON — green lamp + green glow on collar */
-.btn-start::after {
+/* All lamps unlit by default */
+.btn-start::after,
+.btn-sim::after,
+.btn-clear::after,
+.btn-export::after {
+  background: radial-gradient(circle at 40% 35%,
+    rgba(255,255,255,0.08), rgba(20,15,5,0.95));
+  box-shadow: inset 0 1px 1px rgba(0,0,0,0.8);
+}
+
+/* SENSORS ON — green lamp only when active */
+.btn-start.active::after {
   background: radial-gradient(circle at 35% 30%, #e0ff80, #50c000);
   box-shadow:
     0 0 6px rgba(128,240,0,1),
@@ -807,23 +817,13 @@ canvas#analogWave {
     0 0 28px rgba(128,240,0,0.3),
     inset 0 1px 1px rgba(255,255,255,0.5);
 }
-.btn-start .btn-inner {
+.btn-start.active .btn-inner {
   color: #a8e040;
   text-shadow: 0 0 10px rgba(140,220,0,0.7);
 }
-.btn-start {
-  box-shadow:
-    0 4px 0 #060400,
-    0 5px 0 rgba(0,0,0,0.6),
-    0 6px 10px rgba(0,0,0,0.7),
-    0 0 12px rgba(100,200,0,0.15),
-    inset 0 1px 0 rgba(180,240,80,0.25),
-    inset 1px 0 0 rgba(180,240,80,0.10),
-    inset -1px 0 0 rgba(0,0,0,0.4);
-}
 
-/* SIMULATE — amber lamp + amber glow */
-.btn-sim::after {
+/* SIMULATE — amber lamp only when active */
+.btn-sim.active::after {
   background: radial-gradient(circle at 35% 30%, #fff080, #e09000);
   box-shadow:
     0 0 6px rgba(240,180,0,1),
@@ -831,25 +831,19 @@ canvas#analogWave {
     0 0 28px rgba(240,180,0,0.3),
     inset 0 1px 1px rgba(255,255,255,0.4);
 }
-.btn-sim .btn-inner {
+.btn-sim.active .btn-inner {
   color: var(--chrome-hi);
   text-shadow: 0 0 10px rgba(240,180,0,0.6);
 }
-.btn-sim {
-  box-shadow:
-    0 4px 0 #060400,
-    0 5px 0 rgba(0,0,0,0.6),
-    0 6px 10px rgba(0,0,0,0.7),
-    0 0 12px rgba(220,160,0,0.15),
-    inset 0 1px 0 rgba(240,200,80,0.25),
-    inset 1px 0 0 rgba(240,200,80,0.10),
-    inset -1px 0 0 rgba(0,0,0,0.4);
-}
 
-/* STOP — red lamp unlit when disabled */
+/* Default label colors (unlit) */
+.btn-start .btn-inner { color: var(--chrome-dim); }
+.btn-sim   .btn-inner { color: var(--chrome-dim); }
+
+/* STOP — red lamp only when enabled */
 .btn-stop::after {
   background: radial-gradient(circle at 40% 35%,
-    rgba(255,255,255,0.08), rgba(60,8,8,0.95));
+    rgba(255,255,255,0.06), rgba(40,5,5,0.98));
   box-shadow: inset 0 1px 1px rgba(0,0,0,0.9);
 }
 .btn-stop:not([disabled])::after {
@@ -862,21 +856,17 @@ canvas#analogWave {
 }
 .btn-stop { opacity: 0.35; }
 .btn-stop:not([disabled]) { opacity: 1; }
-.btn-stop .btn-inner { color: #806050; text-shadow: none; }
+.btn-stop .btn-inner { color: #504030; text-shadow: none; }
 .btn-stop:not([disabled]) .btn-inner {
   color: #ff6040;
   text-shadow: 0 0 10px rgba(240,60,20,0.7);
 }
 
-/* CLEAR LOG — neutral dim lamp */
-.btn-clear::after {
-  background: radial-gradient(circle at 40% 35%,
-    rgba(255,255,255,0.08), rgba(20,20,15,0.95));
-  box-shadow: inset 0 1px 1px rgba(0,0,0,0.8);
-}
+/* CLEAR LOG — always dim */
+.btn-clear .btn-inner { color: var(--chrome-dim); }
 
-/* EXPORT — ice blue lamp */
-.btn-export::after {
+/* EXPORT — lamp only when has data (handled via .active class) */
+.btn-export.active::after {
   background: radial-gradient(circle at 35% 30%, #c0e8ff, #2060c0);
   box-shadow:
     0 0 6px rgba(80,160,240,1),
@@ -884,7 +874,8 @@ canvas#analogWave {
     0 0 28px rgba(80,160,240,0.25),
     inset 0 1px 1px rgba(255,255,255,0.5);
 }
-.btn-export .btn-inner {
+.btn-export .btn-inner { color: var(--chrome-dim); }
+.btn-export.active .btn-inner {
   color: var(--chrome-hi);
   text-shadow: 0 0 10px rgba(120,200,255,0.5);
 }
@@ -2179,6 +2170,12 @@ class App {
     document.getElementById('btnStop').disabled   = !on;
     document.getElementById('btnEnable').disabled =  on;
     document.getElementById('btnSim').disabled    =  on;
+    // Button lamps — only light when that mode is running
+    const isSim = !!this._sim;
+    document.getElementById('btnEnable').classList.toggle('active', on && !isSim);
+    document.getElementById('btnSim').classList.toggle('active',    on && isSim);
+    // Export lamp lights when session has jumps
+    document.getElementById('btnExport').classList.remove('active');
   }
 
   _exportSession() {
@@ -2421,9 +2418,10 @@ class App {
     document.getElementById('logCount').textContent = e.id + ' JUMP' + (e.id!==1?'S':'');
     this._updateBestAirtime();
     this._renderLog();
-    // Mark jump on waveform — close the airborne region with label
     this._wave.markAirEnd(`#${eventWithDist.id}`);
     this._wave.markJump(`#${eventWithDist.id}`);
+    // Light export lamp now that we have data
+    document.getElementById('btnExport').classList.add('active');
   }
 
   _renderLog() {
