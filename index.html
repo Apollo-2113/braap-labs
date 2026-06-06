@@ -599,226 +599,182 @@ canvas#analogWave {
   font-size: 10px;
 }
 
-/* ── CONTROLS ── */
+/* ═══════════════════════════════════════════════
+   COCKPIT CONTROLS — Analog instrument panel
+   Inspired by: F-18 UFC, Cessna radio stack,
+   Apollo DSKY, vintage avionics panels
+═══════════════════════════════════════════════ */
+
 .controls {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  gap: 10px;
+  background: linear-gradient(180deg, #0e0c06 0%, #080600 100%);
+  border: 1px solid var(--border2);
+  border-radius: 6px;
+  padding: 14px;
+  box-shadow:
+    inset 0 2px 8px rgba(0,0,0,0.6),
+    inset 0 -1px 0 rgba(255,220,100,0.04),
+    0 2px 8px rgba(0,0,0,0.5);
 }
 
-/* ── SKEUOMORPHIC BUTTON BASE ── */
+/* ── COCKPIT BUTTON BASE ──
+   Looks like a mil-spec momentary pushbutton:
+   - Raised rectangular bezel in brushed aluminium
+   - Recessed label area (engraved look)
+   - Indicator light on top
+   - Hard pressed state with tactile click feel
+*/
 .btn {
   font-family: 'Share Tech Mono', monospace;
-  font-size: 11px;
-  letter-spacing: 0.18em;
+  font-size: 10px;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
-  border-radius: 8px;
   cursor: pointer;
   padding: 0;
-  transition: transform 0.08s ease, box-shadow 0.08s ease;
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
   border: none;
   outline: none;
+  border-radius: 4px;
+  position: relative;
+  display: block;
   -webkit-tap-highlight-color: transparent;
   user-select: none;
+  /* Outer housing — the bezel ring */
+  background: linear-gradient(145deg,
+    #2a2418 0%,
+    #1a1608 40%,
+    #0e0c04 70%,
+    #1e1a0a 100%);
+  box-shadow:
+    /* Bottom lift — makes it look raised */
+    0 4px 0 #050400,
+    0 5px 0 rgba(0,0,0,0.7),
+    0 6px 10px rgba(0,0,0,0.8),
+    /* Top edge catch-light */
+    inset 0 1px 0 rgba(255,240,160,0.18),
+    /* Left edge lighter */
+    inset 1px 0 0 rgba(255,240,160,0.08),
+    /* Right + bottom darker */
+    inset -1px 0 0 rgba(0,0,0,0.5),
+    inset 0 -1px 0 rgba(0,0,0,0.6);
+  border-top: 1px solid rgba(255,240,160,0.15);
+  border-left: 1px solid rgba(255,240,160,0.08);
+  border-right: 1px solid rgba(0,0,0,0.6);
+  border-bottom: 1px solid rgba(0,0,0,0.8);
+  transition: transform 0.06s ease, box-shadow 0.06s ease;
 }
 
-/* Inner label layer — sits on top of the raised surface */
+/* Indicator light strip at top of button */
+.btn::before {
+  content: '';
+  position: absolute;
+  top: 5px; left: 50%; transform: translateX(-50%);
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%,
+    rgba(255,255,255,0.3),
+    rgba(80,60,0,0.8));
+  box-shadow: inset 0 1px 1px rgba(0,0,0,0.6);
+  z-index: 2;
+  transition: background 0.15s, box-shadow 0.15s;
+}
+
+/* Recessed label plate */
 .btn-inner {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  width: 100%;
-  padding: 15px 16px;
-  border-radius: 7px;
-  border-top: 1px solid rgba(255,255,255,0.12);
-  border-bottom: 1px solid rgba(0,0,0,0.5);
-  transition: padding 0.08s ease, border 0.08s ease, background 0.08s ease;
+  gap: 7px;
+  margin: 18px 4px 4px;
+  padding: 10px 8px;
+  border-radius: 3px;
+  background: linear-gradient(180deg, #060502 0%, #0a0800 100%);
+  box-shadow:
+    inset 0 2px 4px rgba(0,0,0,0.7),
+    inset 0 1px 0 rgba(0,0,0,0.9),
+    0 1px 0 rgba(255,240,160,0.06);
+  border-top: 1px solid rgba(0,0,0,0.8);
+  border-bottom: 1px solid rgba(255,240,160,0.04);
+  transition: padding 0.06s ease;
 }
 
-/* Pressed state — button sinks in */
-.btn:active .btn-inner,
-.btn.pressed .btn-inner {
-  padding-top: 17px;
-  padding-bottom: 13px;
-  border-top: 1px solid rgba(0,0,0,0.3);
-  border-bottom: 1px solid rgba(255,255,255,0.06);
+/* ── ACTIVE STATE — button lit up ── */
+.btn-start::before {
+  background: radial-gradient(circle at 40% 35%,
+    #e0ff80, #80c820);
+  box-shadow:
+    0 0 4px rgba(168,220,64,0.9),
+    0 0 8px rgba(168,220,64,0.5),
+    inset 0 1px 1px rgba(255,255,255,0.3);
 }
+.btn-sim::before {
+  background: radial-gradient(circle at 40% 35%,
+    #ffe080, #c88000);
+  box-shadow:
+    0 0 4px rgba(240,180,20,0.9),
+    0 0 8px rgba(240,180,20,0.5),
+    inset 0 1px 1px rgba(255,255,255,0.3);
+}
+
+/* Stop button — red indicator only when active */
+.btn-stop::before {
+  background: radial-gradient(circle at 40% 35%,
+    rgba(255,255,255,0.2),
+    rgba(100,20,20,0.8));
+  box-shadow: inset 0 1px 1px rgba(0,0,0,0.6);
+}
+.btn-stop:not([disabled])::before {
+  background: radial-gradient(circle at 40% 35%,
+    #ff9080, #e02010);
+  box-shadow:
+    0 0 4px rgba(232,48,20,0.9),
+    0 0 8px rgba(232,48,20,0.5),
+    inset 0 1px 1px rgba(255,255,255,0.3);
+}
+
+/* ── LABEL COLORS ── */
+.btn-start .btn-inner { color: #a8dc40; text-shadow: 0 0 8px rgba(168,220,64,0.6); }
+.btn-sim   .btn-inner { color: var(--chrome-hi); text-shadow: 0 0 8px rgba(240,180,20,0.5); }
+.btn-stop  .btn-inner { color: #888; text-shadow: none; }
+.btn-stop:not([disabled]) .btn-inner { color: #ff6040; text-shadow: 0 0 8px rgba(232,80,40,0.5); }
+.btn-clear .btn-inner { color: var(--white-dim); text-shadow: none; }
+.btn-export .btn-inner { color: var(--chrome-hi); text-shadow: 0 0 8px rgba(240,200,80,0.4); }
+
+/* ── PRESSED STATE ── */
 .btn:active {
-  transform: translateY(2px);
+  transform: translateY(3px);
+  box-shadow:
+    0 1px 0 #050400,
+    0 2px 4px rgba(0,0,0,0.8),
+    inset 0 1px 0 rgba(0,0,0,0.5),
+    inset 0 2px 6px rgba(0,0,0,0.6),
+    inset 1px 0 0 rgba(0,0,0,0.4),
+    inset -1px 0 0 rgba(255,240,160,0.04);
+  border-top: 1px solid rgba(0,0,0,0.5);
+  border-bottom: 1px solid rgba(255,240,160,0.06);
+}
+.btn:active .btn-inner {
+  padding-top: 12px;
+  padding-bottom: 8px;
+  box-shadow:
+    inset 0 3px 6px rgba(0,0,0,0.8),
+    inset 0 1px 0 rgba(0,0,0,0.9);
 }
 
-.btn-icon {
-  font-size: 15px;
-  line-height: 1;
-  flex-shrink: 0;
-}
-
-/* ── ENABLE SENSORS — green raised button ── */
-.btn-start {
-  background: linear-gradient(180deg, #1a2e0a 0%, #0c1806 100%);
-  box-shadow:
-    /* Outer rim — dark edge */
-    0 1px 0 rgba(0,0,0,0.8),
-    /* Main lift shadow */
-    0 4px 0 #050e02,
-    0 5px 0 rgba(0,0,0,0.6),
-    0 6px 8px rgba(0,0,0,0.7),
-    /* Top edge light */
-    inset 0 1px 0 rgba(168,220,64,0.15),
-    /* Side depth */
-    inset 1px 0 0 rgba(255,255,255,0.04),
-    inset -1px 0 0 rgba(0,0,0,0.3);
-  border: 1px solid #0a1804;
-  color: #a8dc40;
-}
-.btn-start .btn-inner {
-  background: linear-gradient(180deg,
-    rgba(168,220,64,0.12) 0%,
-    rgba(80,140,20,0.06) 50%,
-    rgba(0,0,0,0.1) 100%);
-  color: #a8dc40;
-  text-shadow: 0 0 12px rgba(168,220,64,0.5), 0 1px 2px rgba(0,0,0,0.8);
-}
-.btn-start:active {
-  box-shadow:
-    0 1px 0 rgba(0,0,0,0.8),
-    0 2px 0 #050e02,
-    0 3px 4px rgba(0,0,0,0.7),
-    inset 0 1px 0 rgba(0,0,0,0.3),
-    inset 0 2px 4px rgba(0,0,0,0.4);
-}
-
-/* ── SIMULATE — amber/gold raised button ── */
-.btn-sim {
-  background: linear-gradient(180deg, #201800 0%, #120e00 100%);
-  box-shadow:
-    0 1px 0 rgba(0,0,0,0.8),
-    0 4px 0 #080600,
-    0 5px 0 rgba(0,0,0,0.6),
-    0 6px 8px rgba(0,0,0,0.7),
-    inset 0 1px 0 rgba(240,180,20,0.15),
-    inset 1px 0 0 rgba(255,255,255,0.04),
-    inset -1px 0 0 rgba(0,0,0,0.3);
-  border: 1px solid #100c00;
-  color: var(--chrome-hi);
-}
-.btn-sim .btn-inner {
-  background: linear-gradient(180deg,
-    rgba(240,180,20,0.14) 0%,
-    rgba(180,120,0,0.07) 50%,
-    rgba(0,0,0,0.1) 100%);
-  color: var(--chrome-hi);
-  text-shadow: 0 0 12px rgba(240,180,20,0.5), 0 1px 2px rgba(0,0,0,0.8);
-}
-.btn-sim:active {
-  box-shadow:
-    0 1px 0 rgba(0,0,0,0.8),
-    0 2px 0 #080600,
-    0 3px 4px rgba(0,0,0,0.7),
-    inset 0 1px 0 rgba(0,0,0,0.3),
-    inset 0 2px 4px rgba(0,0,0,0.4);
-}
-
-/* ── STOP — red sunken button ── */
-.btn-stop {
-  background: linear-gradient(180deg, #280c0c 0%, #160606 100%);
-  box-shadow:
-    0 1px 0 rgba(0,0,0,0.8),
-    0 4px 0 #0a0202,
-    0 5px 0 rgba(0,0,0,0.6),
-    0 6px 8px rgba(0,0,0,0.7),
-    inset 0 1px 0 rgba(232,72,32,0.12),
-    inset 1px 0 0 rgba(255,255,255,0.04),
-    inset -1px 0 0 rgba(0,0,0,0.3);
-  border: 1px solid #0e0404;
-  color: var(--red);
+/* Disabled state */
+.btn:disabled, .btn[disabled] {
   opacity: 0.35;
+  cursor: not-allowed;
 }
-.btn-stop:not([disabled]) { opacity: 1; }
-.btn-stop .btn-inner {
-  background: linear-gradient(180deg,
-    rgba(232,72,32,0.12) 0%,
-    rgba(160,30,10,0.06) 50%,
-    rgba(0,0,0,0.1) 100%);
-  color: var(--red);
-  text-shadow: 0 0 12px rgba(232,72,32,0.5), 0 1px 2px rgba(0,0,0,0.8);
-}
-.btn-stop:active:not([disabled]) {
-  box-shadow:
-    0 1px 0 rgba(0,0,0,0.8),
-    0 2px 0 #0a0202,
-    0 3px 4px rgba(0,0,0,0.7),
-    inset 0 1px 0 rgba(0,0,0,0.3),
-    inset 0 2px 4px rgba(0,0,0,0.4);
+.btn:disabled:active, .btn[disabled]:active {
+  transform: none;
 }
 
-/* ── CLEAR LOG — neutral dark button ── */
-.btn-clear {
-  background: linear-gradient(180deg, #181a1c 0%, #0e1012 100%);
-  box-shadow:
-    0 1px 0 rgba(0,0,0,0.8),
-    0 4px 0 #050606,
-    0 5px 0 rgba(0,0,0,0.6),
-    0 6px 8px rgba(0,0,0,0.7),
-    inset 0 1px 0 rgba(255,255,255,0.07),
-    inset 1px 0 0 rgba(255,255,255,0.03),
-    inset -1px 0 0 rgba(0,0,0,0.3);
-  border: 1px solid #080a0c;
-  color: var(--white-dim);
-}
-.btn-clear .btn-inner {
-  background: linear-gradient(180deg,
-    rgba(255,255,255,0.05) 0%,
-    rgba(0,0,0,0.05) 100%);
-  color: var(--white-dim);
-  text-shadow: 0 1px 2px rgba(0,0,0,0.8);
-}
-.btn-clear:active {
-  box-shadow:
-    0 1px 0 rgba(0,0,0,0.8),
-    0 2px 0 #050606,
-    0 3px 4px rgba(0,0,0,0.7),
-    inset 0 1px 0 rgba(0,0,0,0.3),
-    inset 0 2px 4px rgba(0,0,0,0.4);
-}
-
-/* ── EXPORT — ice blue wide button ── */
+/* Export — full width */
 .btn-export {
-  background: linear-gradient(180deg, #0c1620 0%, #060c14 100%);
-  box-shadow:
-    0 1px 0 rgba(0,0,0,0.8),
-    0 4px 0 #02060a,
-    0 5px 0 rgba(0,0,0,0.6),
-    0 6px 8px rgba(0,0,0,0.7),
-    inset 0 1px 0 rgba(144,224,239,0.10),
-    inset 1px 0 0 rgba(255,255,255,0.03),
-    inset -1px 0 0 rgba(0,0,0,0.3);
-  border: 1px solid #040810;
-  color: var(--chrome-hi);
+  grid-column: span 2;
 }
-.btn-export .btn-inner {
-  background: linear-gradient(180deg,
-    rgba(144,224,239,0.08) 0%,
-    rgba(0,100,150,0.04) 50%,
-    rgba(0,0,0,0.08) 100%);
-  color: var(--chrome-hi);
-  text-shadow: 0 0 12px rgba(144,224,239,0.3), 0 1px 2px rgba(0,0,0,0.8);
-}
-.btn-export:active {
-  box-shadow:
-    0 1px 0 rgba(0,0,0,0.8),
-    0 2px 0 #02060a,
-    0 3px 4px rgba(0,0,0,0.7),
-    inset 0 1px 0 rgba(0,0,0,0.3),
-    inset 0 2px 4px rgba(0,0,0,0.4);
-}
-.btn-export:disabled { opacity: 0.3; cursor: not-allowed; }
 
 /* ── DIGITAL SPEED DISPLAY ── */
 .speed-digital {
@@ -1171,19 +1127,19 @@ canvas#analogWave {
   <!-- CONTROLS -->
   <div class="controls">
     <button class="btn btn-start" id="btnEnable">
-      <div class="btn-inner"><span class="btn-icon">📡</span>Enable Sensors</div>
+      <div class="btn-inner">SENSORS ON</div>
     </button>
     <button class="btn btn-sim" id="btnSim">
-      <div class="btn-inner"><span class="btn-icon">🔵</span>Simulate</div>
+      <div class="btn-inner">SIMULATE</div>
     </button>
     <button class="btn btn-stop" id="btnStop" disabled>
-      <div class="btn-inner"><span class="btn-icon">⬛</span>Stop</div>
+      <div class="btn-inner">STOP</div>
     </button>
     <button class="btn btn-clear" id="btnClear">
-      <div class="btn-inner">Clear Log</div>
+      <div class="btn-inner">CLEAR LOG</div>
     </button>
     <button class="btn btn-export" id="btnExport" style="grid-column:span 2">
-      <div class="btn-inner"><span class="btn-icon">⬇</span>Export Session Data</div>
+      <div class="btn-inner">EXPORT SESSION DATA</div>
     </button>
   </div>
 
