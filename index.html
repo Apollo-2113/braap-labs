@@ -1277,6 +1277,216 @@ body.sw #bikeGas.active  .bike-opt-inner { color: #60d8ff; text-shadow: 0 0 10px
 }
 .btn-export:disabled { opacity: 0.3; cursor: not-allowed; }
 
+/* ── CALIBRATE BUTTON ── */
+.btn-calibrate {
+  width: 100%;
+  margin-top: 8px;
+  padding: 0;
+  border: none;
+  outline: none;
+  border-radius: 3px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  background: linear-gradient(145deg, #1a1608 0%, #100e04 60%, #0c0a02 100%);
+  color: var(--border2);
+  border-top: 1px solid rgba(240,200,80,0.08);
+  box-shadow:
+    0 3px 0 #040300,
+    0 4px 6px rgba(0,0,0,0.5),
+    inset 0 1px 0 rgba(240,200,80,0.06);
+  transition: transform 0.07s, box-shadow 0.07s, color 0.15s;
+}
+.btn-calibrate:active { transform: translateY(2px); box-shadow: 0 1px 0 #040300; }
+.btn-calibrate:hover  { color: var(--chrome-dim); }
+.btn-calibrate-inner  { padding: 12px; }
+
+/* ── CALIBRATION OVERLAY ── */
+.cal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.85);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.cal-overlay.open { display: flex; }
+
+.cal-panel {
+  background:
+    repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(240,168,0,0.015) 2px, rgba(240,168,0,0.015) 3px),
+    linear-gradient(180deg, #141008 0%, #0c0a04 100%);
+  border: 2px solid var(--border2);
+  border-radius: 6px;
+  padding: 24px 20px;
+  width: 100%;
+  max-width: 380px;
+  box-shadow:
+    0 0 0 1px rgba(0,0,0,0.5),
+    0 8px 32px rgba(0,0,0,0.8),
+    inset 0 1px 0 rgba(240,200,80,0.08);
+}
+.cal-title {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 14px;
+  letter-spacing: 0.2em;
+  color: var(--chrome-hi);
+  text-shadow: 0 0 10px rgba(240,200,80,0.4);
+  margin-bottom: 10px;
+  text-align: center;
+}
+.cal-desc {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  color: var(--chrome-dim);
+  letter-spacing: 0.08em;
+  line-height: 1.6;
+  text-align: center;
+  margin-bottom: 20px;
+}
+.cal-counter {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin: 20px 0;
+}
+.cal-count-num {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 56px;
+  color: var(--chrome-hi);
+  text-shadow: 0 0 20px rgba(240,200,80,0.5);
+  line-height: 1;
+}
+.cal-count-lbl {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9px;
+  color: var(--chrome-dim);
+  letter-spacing: 0.2em;
+}
+.cal-banner {
+  text-align: center;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: var(--red);
+  margin-bottom: 20px;
+  animation: cal-blink 1s infinite;
+}
+@keyframes cal-blink {
+  0%,100% { opacity: 1; }
+  50%      { opacity: 0.3; }
+}
+.cal-btn {
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 3px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: opacity 0.15s, transform 0.07s;
+}
+.cal-btn:active { transform: translateY(2px); }
+.cal-btn-primary {
+  background: linear-gradient(145deg, #2a2008 0%, #1a1404 100%);
+  border: 1px solid var(--border2);
+  color: var(--chrome-hi);
+  text-shadow: 0 0 8px rgba(240,200,80,0.4);
+  box-shadow: 0 3px 0 #060400, inset 0 1px 0 rgba(240,200,80,0.12);
+}
+.cal-btn-cancel {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--border2);
+}
+.cal-btn-cancel:hover { color: var(--chrome-dim); }
+
+/* Event list */
+.cal-events {
+  max-height: 280px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  margin-bottom: 14px;
+}
+.cal-event {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.cal-event:last-child { border-bottom: none; }
+.cal-event:hover { background: var(--bg3); }
+.cal-event.selected { background: rgba(240,200,80,0.06); }
+.cal-check {
+  width: 18px; height: 18px;
+  border: 1px solid var(--border2);
+  border-radius: 2px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  color: var(--chrome-hi);
+  background: var(--bg);
+}
+.cal-event.selected .cal-check {
+  background: var(--chrome-hi);
+  color: #000;
+  border-color: var(--chrome-hi);
+  box-shadow: 0 0 6px rgba(240,200,80,0.5);
+}
+.cal-event-info {
+  flex: 1;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+}
+.cal-event-time { color: var(--chrome-hi); font-size: 12px; }
+.cal-event-detail { color: var(--chrome-dim); font-size: 9px; margin-top: 2px; }
+
+/* Result grid */
+.cal-result-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 16px 0;
+}
+.cal-result-item {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 10px;
+  text-align: center;
+}
+.cal-result-val {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 16px;
+  color: var(--chrome-hi);
+  text-shadow: 0 0 8px rgba(240,200,80,0.4);
+}
+.cal-result-lbl {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 8px;
+  color: var(--chrome-dim);
+  letter-spacing: 0.1em;
+  margin-top: 3px;
+}
+.cal-actions { display: flex; flex-direction: column; gap: 0; }
+
 .empty-log {
   padding: 32px;
   text-align: center;
@@ -1513,7 +1723,51 @@ body.sw #bikeGas.active  .bike-opt-inner { color: #60d8ff; text-shadow: 0 0 10px
     </div>
   </div>
 
+  <!-- CALIBRATE BUTTON — bottom of page -->
+  <button class="btn-calibrate" id="btnCalibrate" onclick="window._app.startCalibration()">
+    <div class="btn-calibrate-inner">⚙ CALIBRATE THRESHOLDS</div>
+  </button>
+
 </div><!-- /shell -->
+
+<!-- CALIBRATION OVERLAY -->
+<div class="cal-overlay" id="calOverlay">
+  <div class="cal-panel">
+
+    <!-- STEP 1: RECORDING -->
+    <div class="cal-step" id="calStepRecord">
+      <div class="cal-title">⚙ CALIBRATION MODE</div>
+      <div class="cal-desc">Ride your jumps normally. App will record everything — including false positives. When done, tap STOP.</div>
+      <div class="cal-counter">
+        <span class="cal-count-num" id="calCount">0</span>
+        <span class="cal-count-lbl">EVENTS CAPTURED</span>
+      </div>
+      <div class="cal-banner" id="calBanner">● RECORDING</div>
+      <button class="cal-btn cal-btn-primary" id="calStopBtn" onclick="window._app.stopCalibration()">STOP RECORDING</button>
+      <button class="cal-btn cal-btn-cancel" onclick="window._app.cancelCalibration()">CANCEL</button>
+    </div>
+
+    <!-- STEP 2: REVIEW -->
+    <div class="cal-step" id="calStepReview" style="display:none">
+      <div class="cal-title">SELECT REAL JUMPS</div>
+      <div class="cal-desc">Check the events that were actual jumps. Uncheck false positives.</div>
+      <div class="cal-events" id="calEvents"></div>
+      <div class="cal-actions">
+        <button class="cal-btn cal-btn-primary" id="calSaveBtn" onclick="window._app.saveCalibration()">SAVE CALIBRATION</button>
+        <button class="cal-btn cal-btn-cancel" onclick="window._app.cancelCalibration()">CANCEL</button>
+      </div>
+    </div>
+
+    <!-- STEP 3: RESULT -->
+    <div class="cal-step" id="calStepResult" style="display:none">
+      <div class="cal-title">✓ CALIBRATED</div>
+      <div class="cal-desc" id="calResultDesc"></div>
+      <div class="cal-result-grid" id="calResultGrid"></div>
+      <button class="cal-btn cal-btn-primary" onclick="window._app.doneCalibration()">DONE</button>
+    </div>
+
+  </div>
+</div>
 
 <script>
 'use strict';
@@ -1547,15 +1801,15 @@ class FSM {
         const minSpd = this.cfg.minSpeedMph || 5;
         const moving = (speedMph !== null && speedMph >= minSpd);
         if (mag < this.cfg.ff && moving) {
-          if (++this._fsSamples >= 4) { this._to(FSM.S.AIR, ts); this._t0=ts; this._peakG=0; this._peakW=0; }
+          if (++this._fsSamples >= 4) { this._to(FSM.S.AIR, ts); this._t0=ts; this._peakG=0; this._peakW=0; this._minFiltMag=999; }
         } else this._fsSamples=0;
         break;
       case FSM.S.AIR:
         if (gyro > this._peakW) this._peakW = gyro;
         if (rawMag > this._peakG) this._peakG = rawMag;
-        // Auto-cancel if airborne > 3 seconds — must be a false positive
+        if (mag < (this._minFiltMag ?? 999)) this._minFiltMag = mag;
+        // Auto-cancel if airborne > 3 seconds
         if (ts - this._t0 > 3000) { this._to(FSM.S.GROUND, ts); this._fsSamples=0; break; }
-        // Use RAW magnitude for landing detection, filtered for impact recording
         if (rawMag > this.cfg.land) { this._to(FSM.S.LAND, ts); this._doLand(mag, rawMag, ts); }
         break;
       case FSM.S.LAND:
@@ -2139,6 +2393,9 @@ class App {
     // Apply default bike preset last — after all state is initialized
     this._bikeType = 'electric';
     this.setBikeType('electric');
+    this._loadCalibration();
+    this._calEvents = [];
+    this._calActive = false;
   }
 
   _frame(f) {
@@ -2254,6 +2511,115 @@ class App {
     document.getElementById('btnSim').classList.toggle('active',    on && isSim);
     // Export lamp lights when session has jumps
     document.getElementById('btnExport').classList.remove('active');
+  }
+
+  // ── CALIBRATION ──────────────────────────────
+
+  startCalibration() {
+    this._calEvents = [];
+    this._calActive = true;
+    this._calSavedCfg = { ...this._fsm.cfg };
+    // Very permissive — catch everything including false positives
+    this._fsm.cfg = { ff: 0.95, land: 1.1, minMs: 80, minSpeedMph: 0 };
+    document.getElementById('calOverlay').classList.add('open');
+    document.getElementById('calStepRecord').style.display = '';
+    document.getElementById('calStepReview').style.display = 'none';
+    document.getElementById('calStepResult').style.display = 'none';
+    document.getElementById('calCount').textContent = '0';
+    this._startReal();
+  }
+
+  stopCalibration() {
+    this._stop();
+    this._calActive = false;
+    this._fsm.cfg = { ...this._calSavedCfg };
+    if (this._calEvents.length === 0) {
+      alert('No events detected. Try again.');
+      this.cancelCalibration(); return;
+    }
+    const container = document.getElementById('calEvents');
+    container.innerHTML = '';
+    this._calEvents.forEach((e, i) => {
+      const div = document.createElement('div');
+      div.className = 'cal-event selected';
+      div.dataset.idx = i;
+      div.innerHTML = `
+        <div class="cal-check">✓</div>
+        <div class="cal-event-info">
+          <div class="cal-event-time">${(e.airtimeMs/1000).toFixed(3)}s airtime</div>
+          <div class="cal-event-detail">Impact ${e.impactG.toFixed(1)}G · ${e.takeoffSpeedMph ? e.takeoffSpeedMph.toFixed(1)+'mph' : 'no GPS'}</div>
+        </div>
+      `;
+      div.addEventListener('click', () => {
+        div.classList.toggle('selected');
+        div.querySelector('.cal-check').textContent = div.classList.contains('selected') ? '✓' : '';
+      });
+      container.appendChild(div);
+    });
+    document.getElementById('calStepRecord').style.display = 'none';
+    document.getElementById('calStepReview').style.display = '';
+  }
+
+  saveCalibration() {
+    const selected = [...document.querySelectorAll('.cal-event.selected')]
+      .map(el => this._calEvents[parseInt(el.dataset.idx)]).filter(Boolean);
+    if (selected.length < 1) { alert('Select at least one real jump.'); return; }
+
+    const impacts   = selected.map(e => e.impactG);
+    const freefalls = selected.map(e => e.minFiltMag ?? 0.3);
+    const airtimes  = selected.map(e => e.airtimeMs);
+
+    const avgFreefall = freefalls.reduce((a,b)=>a+b,0) / freefalls.length;
+    const newFf   = Math.min(0.95, parseFloat((avgFreefall * 1.3).toFixed(2)));
+    const newLand = Math.max(1.2,  parseFloat((Math.min(...impacts) * 0.85).toFixed(2)));
+    const newMin  = Math.max(80,   Math.round(Math.min(...airtimes) * 0.75));
+
+    this._fsm.cfg.ff    = newFf;
+    this._fsm.cfg.land  = newLand;
+    this._fsm.cfg.minMs = newMin;
+    this._wave._ff      = newFf;
+    this._wave._land    = newLand;
+    this._wave._dirty   = true;
+
+    const saved = JSON.parse(localStorage.getItem('braaplabs-cal') || '{}');
+    saved[this._bikeType] = { ff: newFf, land: newLand, minMs: newMin };
+    localStorage.setItem('braaplabs-cal', JSON.stringify(saved));
+
+    document.getElementById('bikePresetInfo').textContent =
+      `${this._bikeType==='electric'?'⚡':'🔥'} CALIBRATED · ff:${newFf}G · land:${newLand}G · min:${newMin}ms`;
+
+    document.getElementById('calStepReview').style.display = 'none';
+    document.getElementById('calStepResult').style.display = '';
+    document.getElementById('calResultDesc').textContent =
+      `Calibrated from ${selected.length} jump${selected.length>1?'s':''} · ${this._bikeType} preset updated.`;
+    document.getElementById('calResultGrid').innerHTML = `
+      <div class="cal-result-item"><div class="cal-result-val">${newFf}G</div><div class="cal-result-lbl">FREEFALL</div></div>
+      <div class="cal-result-item"><div class="cal-result-val">${newLand}G</div><div class="cal-result-lbl">LANDING</div></div>
+      <div class="cal-result-item"><div class="cal-result-val">${newMin}ms</div><div class="cal-result-lbl">MIN AIRTIME</div></div>
+      <div class="cal-result-item"><div class="cal-result-val">${selected.length}</div><div class="cal-result-lbl">JUMPS USED</div></div>
+    `;
+  }
+
+  doneCalibration() {
+    document.getElementById('calOverlay').classList.remove('open');
+    this._calEvents = []; this._calActive = false;
+  }
+
+  cancelCalibration() {
+    if (this._calActive) { this._stop(); this._fsm.cfg = { ...this._calSavedCfg }; }
+    document.getElementById('calOverlay').classList.remove('open');
+    this._calEvents = []; this._calActive = false;
+  }
+
+  _loadCalibration() {
+    const saved = JSON.parse(localStorage.getItem('braaplabs-cal') || '{}');
+    if (saved[this._bikeType]) {
+      const c = saved[this._bikeType];
+      this._fsm.cfg.ff = c.ff; this._fsm.cfg.land = c.land; this._fsm.cfg.minMs = c.minMs;
+      this._wave._ff = c.ff; this._wave._land = c.land;
+      document.getElementById('bikePresetInfo').textContent =
+        `${this._bikeType==='electric'?'⚡':'🔥'} CALIBRATED · ff:${c.ff}G · land:${c.land}G · min:${c.minMs}ms`;
+    }
   }
 
   _exportSession() {
@@ -2498,8 +2864,11 @@ class App {
     this._renderLog();
     this._wave.markAirEnd(`#${eventWithDist.id}`);
     this._wave.markJump(`#${eventWithDist.id}`);
-    // Light export lamp now that we have data
-    document.getElementById('btnExport').classList.add('active');
+    // Capture for calibration mode
+    if (this._calActive) {
+      this._calEvents.push({ ...eventWithDist, minFiltMag: this._fsm._minFiltMag ?? 0.3 });
+      document.getElementById('calCount').textContent = this._calEvents.length;
+    }
   }
 
   _renderLog() {
