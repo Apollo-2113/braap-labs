@@ -754,15 +754,12 @@ canvas#analogWave {
   top: 1px;
 }
 
-/* ── COLORED INDICATOR LIGHT
-   Each button has a small indicator lamp
-   in the top-right corner — like a caution lamp
-*/
+/* ── COLORED INDICATOR LIGHT ── */
 .btn::after {
   content: '';
   position: absolute;
   top: 5px; right: 6px;
-  width: 5px; height: 5px;
+  width: 6px; height: 6px;
   border-radius: 50%;
   background: radial-gradient(circle at 40% 35%,
     rgba(255,255,255,0.15),
@@ -772,68 +769,98 @@ canvas#analogWave {
   transition: background 0.2s, box-shadow 0.2s;
 }
 
-/* ── BUTTON VARIANTS ── */
+/* ── BUTTON VARIANTS — Golden Hour ── */
 
-/* SENSORS ON — green lamp */
+/* SENSORS ON — green lamp + green glow on collar */
 .btn-start::after {
-  background: radial-gradient(circle at 40% 35%,
-    #c0ff60, #60a000);
+  background: radial-gradient(circle at 35% 30%, #e0ff80, #50c000);
   box-shadow:
-    0 0 4px rgba(128,220,0,0.9),
-    0 0 8px rgba(128,220,0,0.4),
+    0 0 6px rgba(128,240,0,1),
+    0 0 14px rgba(128,240,0,0.7),
+    0 0 28px rgba(128,240,0,0.3),
+    inset 0 1px 1px rgba(255,255,255,0.5);
+}
+.btn-start .btn-inner {
+  color: #a8e040;
+  text-shadow: 0 0 10px rgba(140,220,0,0.7);
+}
+.btn-start {
+  box-shadow:
+    0 4px 0 #060400,
+    0 5px 0 rgba(0,0,0,0.6),
+    0 6px 10px rgba(0,0,0,0.7),
+    0 0 12px rgba(100,200,0,0.15),
+    inset 0 1px 0 rgba(180,240,80,0.25),
+    inset 1px 0 0 rgba(180,240,80,0.10),
+    inset -1px 0 0 rgba(0,0,0,0.4);
+}
+
+/* SIMULATE — amber lamp + amber glow */
+.btn-sim::after {
+  background: radial-gradient(circle at 35% 30%, #fff080, #e09000);
+  box-shadow:
+    0 0 6px rgba(240,180,0,1),
+    0 0 14px rgba(240,180,0,0.7),
+    0 0 28px rgba(240,180,0,0.3),
     inset 0 1px 1px rgba(255,255,255,0.4);
 }
-.btn-start .btn-inner { color: #a8c860; }
-
-/* SIMULATE — amber lamp */
-.btn-sim::after {
-  background: radial-gradient(circle at 40% 35%,
-    #ffe060, #c08000);
-  box-shadow:
-    0 0 4px rgba(220,160,0,0.9),
-    0 0 8px rgba(220,160,0,0.4),
-    inset 0 1px 1px rgba(255,255,255,0.3);
+.btn-sim .btn-inner {
+  color: var(--chrome-hi);
+  text-shadow: 0 0 10px rgba(240,180,0,0.6);
 }
-.btn-sim .btn-inner { color: #c8a840; }
+.btn-sim {
+  box-shadow:
+    0 4px 0 #060400,
+    0 5px 0 rgba(0,0,0,0.6),
+    0 6px 10px rgba(0,0,0,0.7),
+    0 0 12px rgba(220,160,0,0.15),
+    inset 0 1px 0 rgba(240,200,80,0.25),
+    inset 1px 0 0 rgba(240,200,80,0.10),
+    inset -1px 0 0 rgba(0,0,0,0.4);
+}
 
-/* STOP — red lamp, unlit when disabled */
+/* STOP — red lamp unlit when disabled */
 .btn-stop::after {
   background: radial-gradient(circle at 40% 35%,
-    rgba(255,255,255,0.12),
-    rgba(80,10,10,0.9));
-  box-shadow: inset 0 1px 1px rgba(0,0,0,0.8);
+    rgba(255,255,255,0.08), rgba(60,8,8,0.95));
+  box-shadow: inset 0 1px 1px rgba(0,0,0,0.9);
 }
 .btn-stop:not([disabled])::after {
-  background: radial-gradient(circle at 40% 35%,
-    #ff8060, #cc1000);
+  background: radial-gradient(circle at 35% 30%, #ff9070, #cc0800);
   box-shadow:
-    0 0 4px rgba(220,40,0,0.9),
-    0 0 8px rgba(220,40,0,0.4),
+    0 0 6px rgba(240,40,0,1),
+    0 0 14px rgba(240,40,0,0.7),
+    0 0 28px rgba(240,40,0,0.3),
     inset 0 1px 1px rgba(255,255,255,0.3);
 }
-.btn-stop { opacity: 0.4; }
+.btn-stop { opacity: 0.35; }
 .btn-stop:not([disabled]) { opacity: 1; }
-.btn-stop .btn-inner { color: #906050; }
-.btn-stop:not([disabled]) .btn-inner { color: #e06040; }
+.btn-stop .btn-inner { color: #806050; text-shadow: none; }
+.btn-stop:not([disabled]) .btn-inner {
+  color: #ff6040;
+  text-shadow: 0 0 10px rgba(240,60,20,0.7);
+}
 
-/* CLEAR LOG — neutral */
+/* CLEAR LOG — neutral dim lamp */
 .btn-clear::after {
   background: radial-gradient(circle at 40% 35%,
-    rgba(255,255,255,0.1),
-    rgba(30,30,20,0.9));
-  box-shadow: inset 0 1px 1px rgba(0,0,0,0.7);
+    rgba(255,255,255,0.08), rgba(20,20,15,0.95));
+  box-shadow: inset 0 1px 1px rgba(0,0,0,0.8);
 }
 
-/* EXPORT — blue-white lamp */
+/* EXPORT — ice blue lamp */
 .btn-export::after {
-  background: radial-gradient(circle at 40% 35%,
-    #e0f0ff, #4080c0);
+  background: radial-gradient(circle at 35% 30%, #c0e8ff, #2060c0);
   box-shadow:
-    0 0 4px rgba(100,180,240,0.8),
-    0 0 8px rgba(100,180,240,0.3),
-    inset 0 1px 1px rgba(255,255,255,0.4);
+    0 0 6px rgba(80,160,240,1),
+    0 0 14px rgba(80,160,240,0.6),
+    0 0 28px rgba(80,160,240,0.25),
+    inset 0 1px 1px rgba(255,255,255,0.5);
 }
-.btn-export .btn-inner { color: #a0b8c8; }
+.btn-export .btn-inner {
+  color: var(--chrome-hi);
+  text-shadow: 0 0 10px rgba(120,200,255,0.5);
+}
 .btn-export { grid-column: span 2; }
 .btn-export:disabled { opacity: 0.3; cursor: not-allowed; }
 
@@ -841,11 +868,116 @@ canvas#analogWave {
 .btn:disabled:active, .btn[disabled]:active {
   transform: none;
   box-shadow:
-    0 4px 0 #0a0a08,
+    0 4px 0 #060400,
     0 5px 0 rgba(0,0,0,0.6),
     0 6px 10px rgba(0,0,0,0.7),
-    inset 0 1px 0 rgba(255,255,255,0.2);
+    inset 0 1px 0 rgba(240,200,80,0.15);
 }
+
+/* ══════════════════════════════════════════
+   SW THEME — Blue cockpit button overrides
+   Blue/cyan lamps, teal collar glow
+══════════════════════════════════════════ */
+body.sw .btn {
+  background: linear-gradient(145deg,
+    #0a2030 0%, #061420 30%,
+    #020c18 60%, #081824 100%);
+  box-shadow:
+    0 4px 0 #010508,
+    0 5px 0 rgba(0,0,0,0.6),
+    0 6px 10px rgba(0,0,0,0.8),
+    inset 0 1px 0 rgba(0,180,240,0.20),
+    inset 1px 0 0 rgba(0,180,240,0.08),
+    inset -1px 0 0 rgba(0,0,0,0.5);
+  border-top: 1px solid rgba(0,180,240,0.18);
+  border-left: 1px solid rgba(0,180,240,0.08);
+}
+body.sw .btn::before {
+  background: linear-gradient(180deg,
+    #0a1e2e 0%, #060e18 60%, #040c14 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(0,180,240,0.15),
+    inset 1px 0 0 rgba(0,180,240,0.06),
+    0 -1px 0 rgba(0,0,0,0.6);
+}
+body.sw .controls {
+  background:
+    repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(0,180,240,0.02) 2px, rgba(0,180,240,0.02) 3px),
+    linear-gradient(180deg, #040e18 0%, #020810 50%, #041014 100%);
+  border: 2px solid #003858;
+}
+body.sw .controls::before,
+body.sw .controls::after {
+  background: radial-gradient(circle at 35% 30%, #00b4d8, #004868);
+}
+
+/* SW lamp overrides */
+body.sw .btn-start::after {
+  background: radial-gradient(circle at 35% 30%, #80ffb0, #00c060);
+  box-shadow:
+    0 0 6px rgba(0,220,100,1),
+    0 0 14px rgba(0,220,100,0.7),
+    0 0 28px rgba(0,220,100,0.3),
+    inset 0 1px 1px rgba(255,255,255,0.5);
+}
+body.sw .btn-start .btn-inner {
+  color: #40e890;
+  text-shadow: 0 0 10px rgba(0,220,100,0.8);
+}
+body.sw .btn-sim::after {
+  background: radial-gradient(circle at 35% 30%, #80e8ff, #0090d0);
+  box-shadow:
+    0 0 6px rgba(0,180,240,1),
+    0 0 14px rgba(0,180,240,0.7),
+    0 0 28px rgba(0,180,240,0.3),
+    inset 0 1px 1px rgba(255,255,255,0.5);
+}
+body.sw .btn-sim .btn-inner {
+  color: #60d8ff;
+  text-shadow: 0 0 10px rgba(0,180,240,0.8);
+}
+body.sw .btn-stop:not([disabled])::after {
+  background: radial-gradient(circle at 35% 30%, #ff6060, #cc0000);
+  box-shadow:
+    0 0 6px rgba(255,40,40,1),
+    0 0 14px rgba(255,40,40,0.7),
+    0 0 28px rgba(255,40,40,0.3),
+    inset 0 1px 1px rgba(255,255,255,0.4);
+}
+body.sw .btn-export::after {
+  background: radial-gradient(circle at 35% 30%, #ffffff, #80c0ff);
+  box-shadow:
+    0 0 6px rgba(180,220,255,1),
+    0 0 14px rgba(180,220,255,0.7),
+    0 0 28px rgba(180,220,255,0.3),
+    inset 0 1px 1px rgba(255,255,255,0.6);
+}
+body.sw .btn-inner { background: linear-gradient(180deg, #040e18 0%, #020810 100%); }
+
+/* SW bike toggle */
+body.sw .bike-toggle {
+  background:
+    repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(0,180,240,0.02) 2px, rgba(0,180,240,0.02) 3px),
+    linear-gradient(180deg, #040e18 0%, #020810 50%, #041014 100%);
+  border: 2px solid #003858;
+}
+body.sw .bike-opt {
+  background: linear-gradient(145deg,
+    #0a2030 0%, #061420 30%,
+    #020c18 60%, #081824 100%);
+  box-shadow:
+    0 4px 0 #010508,
+    0 5px 0 rgba(0,0,0,0.6),
+    0 6px 8px rgba(0,0,0,0.8),
+    inset 0 1px 0 rgba(0,180,240,0.18),
+    inset 1px 0 0 rgba(0,180,240,0.08),
+    inset -1px 0 0 rgba(0,0,0,0.5);
+  border-top: 1px solid rgba(0,180,240,0.16);
+}
+body.sw .bike-opt-inner { background: linear-gradient(180deg, #040e18 0%, #020810 100%); }
+body.sw #bikeElec.active .bike-opt-inner { color: #40e890; text-shadow: 0 0 10px rgba(0,220,100,0.8); }
+body.sw #bikeGas.active  .bike-opt-inner { color: #60d8ff; text-shadow: 0 0 10px rgba(0,180,240,0.8); }
+
 
 
 /* ── DIGITAL SPEED DISPLAY ── */
