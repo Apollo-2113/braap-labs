@@ -1181,24 +1181,35 @@ body.sw #bikeGas.active  .bike-opt-inner { color: #60d8ff; text-shadow: 0 0 10px
   filter: brightness(0.7);
 }
 
-/* Lamp */
+/* Lamp — unlit by default */
 .bike-opt::after {
   content: '';
   position: absolute;
   top: 5px; right: 6px;
-  width: 5px; height: 5px;
+  width: 6px; height: 6px;
   border-radius: 50%;
-  background: radial-gradient(circle at 40% 35%, rgba(255,255,255,0.1), rgba(40,30,10,0.9));
-  box-shadow: inset 0 1px 1px rgba(0,0,0,0.7);
+  background: radial-gradient(circle at 40% 35%, rgba(255,255,255,0.05), rgba(10,8,2,0.98));
+  box-shadow: inset 0 1px 1px rgba(0,0,0,0.9);
   z-index: 3;
+  transition: background 0.2s, box-shadow 0.2s;
 }
+/* Electric — green lamp when active */
 #bikeElec.active::after {
-  background: radial-gradient(circle at 40% 35%, #c0ff60, #60a000);
-  box-shadow: 0 0 4px rgba(128,220,0,0.9), 0 0 8px rgba(128,220,0,0.4);
+  background: radial-gradient(circle at 35% 30%, #e0ff80, #50c000);
+  box-shadow:
+    0 0 6px rgba(128,240,0,1),
+    0 0 14px rgba(128,240,0,0.7),
+    0 0 28px rgba(128,240,0,0.3),
+    inset 0 1px 1px rgba(255,255,255,0.5);
 }
+/* Gas — amber lamp when active */
 #bikeGas.active::after {
-  background: radial-gradient(circle at 40% 35%, #ffe060, #c08000);
-  box-shadow: 0 0 4px rgba(220,160,0,0.9), 0 0 8px rgba(220,160,0,0.4);
+  background: radial-gradient(circle at 35% 30%, #fff080, #e09000);
+  box-shadow:
+    0 0 6px rgba(240,180,0,1),
+    0 0 14px rgba(240,180,0,0.7),
+    0 0 28px rgba(240,180,0,0.3),
+    inset 0 1px 1px rgba(255,255,255,0.4);
 }
 
 /* Inner label plate */
@@ -1217,11 +1228,30 @@ body.sw #bikeGas.active  .bike-opt-inner { color: #60d8ff; text-shadow: 0 0 10px
   font-size: 12px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
+  transition: color 0.15s, text-shadow 0.15s;
 }
-#bikeElec .bike-opt-inner { color: var(--chrome-dim); }
-#bikeElec.active .bike-opt-inner { color: #a8c860; }
-#bikeGas  .bike-opt-inner { color: var(--chrome-dim); }
-#bikeGas.active  .bike-opt-inner { color: var(--chrome-hi); }
+/* Inactive — very dim */
+#bikeElec .bike-opt-inner { color: #2e2810; text-shadow: none; }
+#bikeGas  .bike-opt-inner { color: #2e2810; text-shadow: none; }
+
+/* Active electric — green backlit */
+#bikeElec.active .bike-opt-inner {
+  color: #c0f040;
+  text-shadow:
+    0 0 4px rgba(160,240,0,1),
+    0 0 10px rgba(140,220,0,0.8),
+    0 0 20px rgba(120,200,0,0.5),
+    0 0 40px rgba(100,180,0,0.2);
+}
+/* Active gas — amber backlit */
+#bikeGas.active .bike-opt-inner {
+  color: #ffe060;
+  text-shadow:
+    0 0 4px rgba(255,220,0,1),
+    0 0 10px rgba(240,180,0,0.8),
+    0 0 20px rgba(220,140,0,0.5),
+    0 0 40px rgba(200,100,0,0.2);
+}
 
 .bike-icon { font-size: 14px; }
 .bike-preset-info {
