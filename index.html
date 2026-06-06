@@ -818,8 +818,12 @@ canvas#analogWave {
     inset 0 1px 1px rgba(255,255,255,0.5);
 }
 .btn-start.active .btn-inner {
-  color: #a8e040;
-  text-shadow: 0 0 10px rgba(140,220,0,0.7);
+  color: #c8f060;
+  text-shadow:
+    0 0 4px rgba(160,240,0,1),
+    0 0 10px rgba(140,220,0,0.8),
+    0 0 20px rgba(120,200,0,0.5),
+    0 0 40px rgba(100,180,0,0.2);
 }
 
 /* SIMULATE — amber lamp only when active */
@@ -832,13 +836,17 @@ canvas#analogWave {
     inset 0 1px 1px rgba(255,255,255,0.4);
 }
 .btn-sim.active .btn-inner {
-  color: var(--chrome-hi);
-  text-shadow: 0 0 10px rgba(240,180,0,0.6);
+  color: #ffe080;
+  text-shadow:
+    0 0 4px rgba(255,220,0,1),
+    0 0 10px rgba(240,180,0,0.8),
+    0 0 20px rgba(220,140,0,0.5),
+    0 0 40px rgba(200,100,0,0.2);
 }
 
-/* Default label colors (unlit) */
-.btn-start .btn-inner { color: var(--chrome-dim); }
-.btn-sim   .btn-inner { color: var(--chrome-dim); }
+/* Default label colors — very dim, like unlit backlit keys */
+.btn-start .btn-inner { color: #3a4428; text-shadow: none; }
+.btn-sim   .btn-inner { color: #3a3218; text-shadow: none; }
 
 /* STOP — red lamp only when enabled */
 .btn-stop::after {
@@ -856,14 +864,22 @@ canvas#analogWave {
 }
 .btn-stop { opacity: 0.35; }
 .btn-stop:not([disabled]) { opacity: 1; }
-.btn-stop .btn-inner { color: #504030; text-shadow: none; }
+.btn-stop .btn-inner { color: #2e1810; text-shadow: none; }
 .btn-stop:not([disabled]) .btn-inner {
-  color: #ff6040;
-  text-shadow: 0 0 10px rgba(240,60,20,0.7);
+  color: #ff8060;
+  text-shadow:
+    0 0 4px rgba(255,100,40,1),
+    0 0 10px rgba(240,60,20,0.8),
+    0 0 20px rgba(220,40,0,0.5),
+    0 0 40px rgba(200,20,0,0.2);
 }
 
 /* CLEAR LOG — always dim */
-.btn-clear .btn-inner { color: var(--chrome-dim); }
+.btn-clear .btn-inner { color: #383020; text-shadow: none; }
+.btn-clear:active .btn-inner {
+  color: #c0a860;
+  text-shadow: 0 0 6px rgba(200,168,80,0.6), 0 0 14px rgba(180,140,40,0.3);
+}
 
 /* EXPORT — lamp only when has data (handled via .active class) */
 .btn-export.active::after {
@@ -874,10 +890,14 @@ canvas#analogWave {
     0 0 28px rgba(80,160,240,0.25),
     inset 0 1px 1px rgba(255,255,255,0.5);
 }
-.btn-export .btn-inner { color: var(--chrome-dim); }
+.btn-export .btn-inner { color: #1e2830; text-shadow: none; }
 .btn-export.active .btn-inner {
-  color: var(--chrome-hi);
-  text-shadow: 0 0 10px rgba(120,200,255,0.5);
+  color: #c0e8ff;
+  text-shadow:
+    0 0 4px rgba(180,228,255,1),
+    0 0 10px rgba(120,200,255,0.8),
+    0 0 20px rgba(80,160,240,0.5),
+    0 0 40px rgba(40,120,200,0.2);
 }
 .btn-export { grid-column: span 2; }
 .btn-export:disabled { opacity: 0.3; cursor: not-allowed; }
@@ -938,9 +958,14 @@ body.sw .btn-start::after {
     0 0 28px rgba(0,220,100,0.3),
     inset 0 1px 1px rgba(255,255,255,0.5);
 }
-body.sw .btn-start .btn-inner {
-  color: #40e890;
-  text-shadow: 0 0 10px rgba(0,220,100,0.8);
+body.sw .btn-start .btn-inner { color: #0e2016; text-shadow: none; }
+body.sw .btn-start.active .btn-inner {
+  color: #60ff98;
+  text-shadow:
+    0 0 4px rgba(60,255,130,1),
+    0 0 10px rgba(0,220,100,0.8),
+    0 0 20px rgba(0,180,80,0.5),
+    0 0 40px rgba(0,140,60,0.2);
 }
 body.sw .btn-sim::after {
   background: radial-gradient(circle at 35% 30%, #80e8ff, #0090d0);
@@ -950,9 +975,14 @@ body.sw .btn-sim::after {
     0 0 28px rgba(0,180,240,0.3),
     inset 0 1px 1px rgba(255,255,255,0.5);
 }
-body.sw .btn-sim .btn-inner {
-  color: #60d8ff;
-  text-shadow: 0 0 10px rgba(0,180,240,0.8);
+body.sw .btn-sim .btn-inner { color: #081420; text-shadow: none; }
+body.sw .btn-sim.active .btn-inner {
+  color: #80e8ff;
+  text-shadow:
+    0 0 4px rgba(120,230,255,1),
+    0 0 10px rgba(0,200,240,0.8),
+    0 0 20px rgba(0,160,220,0.5),
+    0 0 40px rgba(0,120,200,0.2);
 }
 body.sw .btn-stop:not([disabled])::after {
   background: radial-gradient(circle at 35% 30%, #ff6060, #cc0000);
