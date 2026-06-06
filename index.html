@@ -254,24 +254,40 @@ body::after {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 1px;
+  gap: 3px;
 }
 .best-airtime-label {
   font-family: 'Share Tech Mono', monospace;
   font-size: 8px;
+  color: var(--chrome);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin-bottom: 1px;
+}
+.best-row {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+}
+.best-sub {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 7px;
   color: var(--chrome-dim);
   letter-spacing: 0.1em;
-  text-transform: uppercase;
+  min-width: 18px;
+  text-align: right;
 }
-.best-airtime-value {
+.best-airtime-value,
+.best-dist-value {
   font-family: 'Share Tech Mono', monospace;
-  font-size: 13px;
+  font-size: 11px;
   color: var(--chrome-hi);
   line-height: 1;
-  text-shadow: 0 0 10px rgba(240,168,0,0.4);
+  text-shadow: 0 0 8px rgba(240,168,0,0.35);
   white-space: nowrap;
 }
-.best-airtime-value.empty { color: var(--border2); }
+.best-airtime-value.empty,
+.best-dist-value.empty { color: var(--border2); text-shadow: none; }
 
 
 /* ── GAUGE ROW ── */
@@ -1230,8 +1246,15 @@ body.sw #bikeGas.active  .bike-opt-inner { color: #60d8ff; text-shadow: 0 0 10px
       </div>
     </div>
     <div class="best-airtime-display">
-      <div class="best-airtime-label">🏆 Best</div>
-      <div class="best-airtime-value empty" id="bestAirtimeVal">—</div>
+      <div class="best-airtime-label">🏆 BEST</div>
+      <div class="best-row">
+        <span class="best-sub">AIR</span>
+        <span class="best-airtime-value empty" id="bestAirtimeVal">—</span>
+      </div>
+      <div class="best-row">
+        <span class="best-sub">DST</span>
+        <span class="best-dist-value empty" id="bestDistVal">—</span>
+      </div>
     </div>
   </div>
 
@@ -2317,10 +2340,17 @@ class App {
   _updateBestAirtime() {
     if (!this._jumps.length) return;
     const bestJump = this._jumps.reduce((a, b) => a.airtimeMs > b.airtimeMs ? a : b);
-    const el = document.getElementById('bestAirtimeVal');
-    const distStr = bestJump.distanceFt !== null ? ` · ${bestJump.distanceFt}↔` : '';
-    el.textContent = (bestJump.airtimeMs / 1000).toFixed(3) + 's' + distStr;
-    el.classList.remove('empty');
+    const bestDist = this._jumps.reduce((a, b) => (a.distanceFt||0) > (b.distanceFt||0) ? a : b);
+
+    const airEl = document.getElementById('bestAirtimeVal');
+    airEl.textContent = (bestJump.airtimeMs / 1000).toFixed(3) + 's';
+    airEl.classList.remove('empty');
+
+    const dstEl = document.getElementById('bestDistVal');
+    if (bestDist.distanceFt) {
+      dstEl.textContent = bestDist.distanceFt + '↔';
+      dstEl.classList.remove('empty');
+    }
   }
 
   _onJump(e) {
@@ -2485,6 +2515,8 @@ class App {
     document.getElementById('sStatus').textContent = 'NO GPS';
     const best = document.getElementById('bestAirtimeVal');
     best.textContent = '—'; best.classList.add('empty');
+    const bestD = document.getElementById('bestDistVal');
+    if (bestD) { bestD.textContent = '—'; bestD.classList.add('empty'); }
   }
 }
 
